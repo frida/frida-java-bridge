@@ -1,0 +1,27 @@
+{
+  "name": "frida-java",
+  "version": "1.0.0",
+  "description": "Java runtime interop from Frida",
+  "main": "index.js",
+  "browserify": {
+    "transform": [
+      [
+        "babelify",
+        {
+          "presets": [
+            "es2015"
+          ]
+        }
+      ]
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/frida/frida-java.git"
+  },
+  "license": "LGPL-2.0 WITH WxWindows-exception-3.1",
+  "bugs": {
+    "url": "https://github.com/frida/frida-java/issues"
+  },
+  "homepage": "https://github.com/frida/frida-java#readme"
+}
