@@ -23,5 +23,16 @@
   "bugs": {
     "url": "https://github.com/frida/frida-java/issues"
   },
-  "homepage": "https://github.com/frida/frida-java#readme"
+  "homepage": "https://github.com/frida/frida-java#readme",
+  "devDependencies": {
+    "bluebird": "^3.4.6",
+    "bluebird-co": "^2.2.0",
+    "frida": "^8.1.7",
+    "frida-compile": "^2.0.6",
+    "mocha": "^3.1.2",
+    "should": "^11.1.1"
+  },
+  "scripts": {
+    "test": "frida-compile test/agent -o test/_agent.js && mocha test/hook.js"
+  }
 }
