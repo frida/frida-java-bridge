@@ -49,6 +49,9 @@ const DVM_METHOD_OFFSET_INSNS = 32;
 const DVM_METHOD_OFFSET_JNI_ARG_INFO = 36;
 
 // access flags
+const kAccPublic = 0x0001;
+const kAccStatic = 0x0008;
+const kAccFinal = 0x0010;
 const kAccNative = 0x0100;
 
 // jobject reference types
@@ -1268,7 +1271,7 @@ function ClassFactory(api, vm) {
 
                 const thread = api["art::Thread::CurrentFromGdb"]();
                 const target = api["art::mirror::Object::Clone"](methodId, thread);
-                Memory.copy(target, originalMethodId, getArtMethodSpec().size);
+                Memory.copy(target, originalMethodId, getArtMethodSpec(vm).size);
                 return target;
             }
             function replaceArtImplementation(fn) {
@@ -1276,7 +1279,7 @@ function ClassFactory(api, vm) {
                     return;
                 }
 
-                const artMethodSpec = getArtMethodSpec();
+                const artMethodSpec = getArtMethodSpec(vm);
                 const artMethodOffset = artMethodSpec.offset;
 
                 if (originalMethodId === null)
@@ -2992,115 +2995,64 @@ function Env(handle) {
     };
 })();
 
-const artMethodSpecByVersionAndPointerSize = {
-    '5.0.': {
-        4: {
-            size: 72,
-            offset: {
-                jniCode: 32,
-                quickCode: 40,
-                accessFlags: 56,
-                dexItemIndex: 60,
-                dexMethodIndex: 64,
-                index: 68
-            }
-        },
-        8: {
-            size: 72,
-            offset: {
-                jniCode: 32,
-                quickCode: 40,
-                accessFlags: 56,
-                dexItemIndex: 60,
-                dexMethodIndex: 64,
-                index: 68
-            }
-        }
-    },
-    '5.1.': {
-        4: {
-            size: 48,
-            offset: {
-                jniCode: 40,
-                quickCode: 44,
-                accessFlags: 20,
-                dexItemIndex: 24,
-                dexMethodIndex: 28,
-                index: 32
-            }
-        },
-        8: {
-            size: 60,
-            offset: {
-                jniCode: 44,
-                quickCode: 52,
-                accessFlags: 20,
-                dexItemIndex: 24,
-                dexMethodIndex: 28,
-                index: 32
-            }
-        }
-    },
-    '6.0.': {
-        4: {
-            size: 40,
-            offset: {
-                jniCode: 32,
-                quickCode: 36,
-                accessFlags: 12,
-                dexItemIndex: 16,
-                dexMethodIndex: 20,
-                index: 24
-            }
-        },
-        8: {
-            size: 52,
-            offset: {
-                jniCode: 36,
-                quickCode: 44,
-                accessFlags: 12,
-                dexItemIndex: 16,
-                dexMethodIndex: 20,
-                index: 24
-            }
-        },
-    },
-    git: {
-        4: {
-            size: 36,
-            offset: {
-                jniCode: 28,
-                quickCode: 32,
-                accessFlags: 4,
-                dexItemIndex: 8,
-                dexMethodIndex: 12,
-                index: 16
-            }
-        },
-        8: {
-            size: 52,
-            offset: {
-                jniCode: 36,
-                quickCode: 44,
-                accessFlags: 4,
-                dexItemIndex: 8,
-                dexMethodIndex: 12,
-                index: 16
-            }
-        },
-    }
-};
-
 let _artMethodSpec = null;
-function getArtMethodSpec() {
+function getArtMethodSpec(vm) {
     if (_artMethodSpec !== null)
         return _artMethodSpec;
 
-    let specByPointerSize = artMethodSpecByVersionAndPointerSize[runtime.androidVersion.substr(0, 4)];
-    if (specByPointerSize === undefined)
-        specByPointerSize = artMethodSpecByVersionAndPointerSize.git;
+    vm.perform(() => {
+        const env = vm.getEnv();
+        const process = env.findClass("android/os/Process");
+        const setArgV0 = env.getStaticMethodId(process, "setArgV0", "(Ljava/lang/String;)V");
 
-    _artMethodSpec = specByPointerSize[Process.pointerSize];
+        const runtimeModule = Process.getModuleByName("libandroid_runtime.so");
+        const runtimeStart = runtimeModule.base;
+        const runtimeEnd = runtimeStart.add(runtimeModule.size);
+
+        const expectedAccessFlags = kAccPublic | kAccStatic | kAccFinal | kAccNative;
+
+        let jniCodeOffset = -1;
+        let accessFlagsOffset = -1;
+        let remaining = 2;
+        for (let offset = 0; offset !== 64 && remaining !== 0; offset += 4) {
+            const field = setArgV0.add(offset);
+
+            if (jniCodeOffset === -1) {
+                const address = Memory.readPointer(field);
+                if (address.compare(runtimeStart) >= 0 && address.compare(runtimeEnd) === -1) {
+                    jniCodeOffset = offset;
+                    remaining--;
+                }
+            }
+
+            if (accessFlagsOffset === -1) {
+                const flags = Memory.readU32(field);
+                if (flags === expectedAccessFlags) {
+                    accessFlagsOffset = offset;
+                    remaining--;
+                }
+            }
+        }
+
+        if (remaining !== 0)
+            throw new Error('Unable to determine ArtMethod field offsets');
+
+        const isMarshmallowOrNewer = accessFlagsOffset < jniCodeOffset;
+
+        const size = isMarshmallowOrNewer
+            ? (jniCodeOffset + (2 * pointerSize))
+            : (accessFlagsOffset + 16);
+
+        _artMethodSpec = {
+            size: size,
+            offset: {
+                jniCode: jniCodeOffset,
+                quickCode: jniCodeOffset + pointerSize,
+                accessFlags: accessFlagsOffset,
+            }
+        };
+    });
+
     return _artMethodSpec;
 }
 
