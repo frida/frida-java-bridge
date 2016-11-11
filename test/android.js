@@ -9,15 +9,15 @@ const frida = require('frida');
 const readFile = Promise.promisify(require('fs').readFile);
 const should = require('should');
 
-describe('Hook', function () {
-  let device, session, script, agent;
+describe('Android', function () {
+  let device, pid, session, script, agent;
 
   this.timeout(30000);
 
   before(Promise.coroutine(function* () {
     device = yield frida.getUsbDevice(3000);
 
-    const pid = yield device.spawn(['com.twitter.android']);
+    pid = yield device.spawn(['com.android.browser']);
 
     session = yield device.attach(pid);
 
@@ -26,6 +26,12 @@ describe('Hook', function () {
     script.events.listen('message', onMessage);
     yield script.load();
     agent = yield script.getExports();
+  }));
+
+  it('should be able to enumerate loaded classes', Promise.coroutine(function* () {
+    yield device.resume(pid);
+
+    yield agent.enumerateLoadedClasses();
   }));
 
   it('should be able to hook a system method', Promise.coroutine(function* () {
