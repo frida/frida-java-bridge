@@ -53,6 +53,7 @@ const kAccPublic = 0x0001;
 const kAccStatic = 0x0008;
 const kAccFinal = 0x0010;
 const kAccNative = 0x0100;
+const kAccFastNative = 0x00080000;
 
 // jobject reference types
 const JNIInvalidRefType = 0;
@@ -121,9 +122,9 @@ function Runtime() {
     this.synchronized = function (obj, fn) {
         assertCalledInJavaPerformCallback();
 
-        const objHandle = obj.hasOwnProperty('$handle')? obj.$handle : obj;
+        const objHandle = obj.hasOwnProperty('$handle') ? obj.$handle : obj;
         if (!(objHandle instanceof NativePointer)) {
-            throw new Error("It's neither a pointer nor a Java instance");
+            throw new Error("Java.synchronized: the first argument `obj` must be either a pointer or a Java instance");
         }
 
         const env = vm.getEnv();
@@ -131,10 +132,12 @@ function Runtime() {
         try {
             fn();
         } finally {
-            try {
-                checkJniResult("VM::MonitorExit", env.monitorExit(objHandle));
-            } catch (e) {
+            const result = env.monitorExit(objHandle);
+            if (result != JNI_OK) {
                 env.checkForExceptionAndThrowIt();
+
+                // If there were no exception, throw the JNI's one instead.
+                throw new Error("VM::MonitorExit failed: " + result);
             }
         }
     };
@@ -156,8 +159,8 @@ function Runtime() {
         const end = tableSize * hashEntrySize;
 
         for (let offset = 0; offset < end; offset += hashEntrySize) {
-            const pEntriePtr = pEntries.add(offset);
-            const dataPtr = Memory.readPointer(pEntriePtr.add(4));
+            const pEntryPtr = pEntries.add(offset);
+            const dataPtr = Memory.readPointer(pEntryPtr.add(4));
             if (!(HASH_TOMBSTONE.equals(dataPtr) || NULL.equals(dataPtr))) {
                 const descriptionPtr = Memory.readPointer(dataPtr.add(24));
                 const description = Memory.readCString(descriptionPtr);
@@ -167,7 +170,7 @@ function Runtime() {
                     const objectSize = Memory.readU32(dataPtr.add(56));
                     const sourceFile = Memory.readCString(Memory.readPointer(dataPtr.add(152)));
                     callbacks.onMatch({
-                        pointer: pEntriePtr,
+                        pointer: pEntryPtr,
                         objectSize: objectSize,
                         sourceFile: sourceFile,
                         description: description
@@ -236,43 +239,52 @@ function Runtime() {
                 vm.perform(fn);
             } catch (e) {
                 setTimeout(() => { throw e; }, 0);
+            } finally {
+                threadsInPerform--;
             }
-            threadsInPerform--;
         } else {
             pending.push(fn);
             if (pending.length === 1) {
-                vm.perform(() => {
-                    const ActivityThread = classFactory.use("android.app.ActivityThread");
-                    const app = ActivityThread.currentApplication();
-                    if (app !== null) {
-                        classFactory.loader = app.getClassLoader();
-                        performPending();
-                    } else {
-                        const m = ActivityThread.getPackageInfoNoCheck;
-                        m.implementation = function () {
-                            m.implementation = null;
-                            const apk = m.apply(this, arguments);
-                            classFactory.loader = apk.getClassLoader();
-                            performPending();
-                            return apk;
-                        };
-                    }
-                });
+                threadsInPerform++;
+                try {
+                    vm.perform(() => {
+                        const ActivityThread = classFactory.use("android.app.ActivityThread");
+                        const app = ActivityThread.currentApplication();
+                        if (app !== null) {
+                            classFactory.loader = app.getClassLoader();
+                            performPending(); // already initialized, continue
+                        } else {
+                            const m = ActivityThread.getPackageInfoNoCheck;
+                            m.implementation = function () {
+                                m.implementation = null;
+                                const apk = m.apply(this, arguments);
+                                classFactory.loader = apk.getClassLoader();
+                                performPending();
+                                return apk;
+                            };
+                        }
+                    });
+                } finally {
+                    threadsInPerform--;
+                }
             }
         }
     };
 
     function performPending() {
         threadsInPerform++;
-        pending.forEach(fn => {
-            try {
-                vm.perform(fn);
-            } catch (e) {
-                setTimeout(() => { throw e; }, 0);
-            }
-        });
-        pending = null;
-        threadsInPerform--;
+        try {
+            while (pending.length > 0) {
+                const fn = pending.shift();
+                try {
+                    vm.perform(fn);
+                } catch (e) {
+                    setTimeout(() => { throw e; }, 0);
+                }
+            } // XXX shift overhead?
+        } finally {
+            threadsInPerform--;
+        }
     }
 
     this.performNow = function (fn) {
@@ -360,34 +372,37 @@ function ClassFactory(api, vm) {
     }
 
     this.dispose = function (env) {
-        for (let method of patchedMethods)
-            method.implementation = null;
-        patchedMethods.clear();
+        while (patchedMethods.length > 0)
+            patchedMethods.pop().implementation = null;
 
         for (let entryId in patchedClasses) {
             if (patchedClasses.hasOwnProperty(entryId)) {
                 const entry = patchedClasses[entryId];
                 Memory.writePointer(entry.vtablePtr, entry.vtable);
                 Memory.writeS32(entry.vtableCountPtr, entry.vtableCount);
+                const targetMethods = entry.targetMethods;
 
-                for (let methodId in entry.targetMethods) {
-                    if (entry.targetMethods.hasOwnProperty(methodId)) {
-                        entry.targetMethods[methodId].implementation = null;
+                for (let methodId in targetMethods) {
+                    if (targetMethods.hasOwnProperty(methodId)) {
+                        targetMethods[methodId].implementation = null;
+                        delete targetMethods[methodId];
                     }
                 }
+                delete patchedClasses[entryId];
             }
         }
-        patchedClasses = {};
 
         for (let classId in classes) {
             if (classes.hasOwnProperty(classId)) {
                 const klass = classes[classId];
-                klass.__methods__.forEach(env.deleteGlobalRef, env);
-                klass.__fields__.forEach(env.deleteGlobalRef, env);
+
+                // prevent argument confusion (forEach passes not only the element but also indexes and the entire array)
+                klass.__methods__.forEach((m) => env.deleteGlobalRef(m), env);
+                klass.__fields__.forEach((f) => env.deleteGlobalRef(f), env);
                 env.deleteGlobalRef(klass.__handle__);
+                delete classes[classId];
             }
         }
-        classes = {};
     };
 
     Object.defineProperty(this, 'loader', {
@@ -480,7 +495,7 @@ function ClassFactory(api, vm) {
             const pattern = ptrClassObject.toMatchPattern();
             const heapSourceBase = api.dvmHeapSourceGetBase();
             const heapSourceLimit = api.dvmHeapSourceGetLimit();
-            const size = heapSourceLimit.toInt32() - heapSourceBase.toInt32();
+            const size = heapSourceLimit.sub(heapSourceBase).toInt32();
             Memory.scan(heapSourceBase, size, pattern, {
                 onMatch(address, size) {
                     if (api.dvmIsValidObject(address)) {
@@ -572,14 +587,19 @@ function ClassFactory(api, vm) {
             superKlass = null;
         }
 
-        // ugly fix for the moment
-        eval("klass = function " + basename(name.replace(/;|\[/g, "")) + "(classHandle, handle) {" +
+        const simpleName = basename(name);
+        eval("klass = function " + simpleName.replace(/^[^a-zA-Z$_]|[^a-zA-Z0-9$_]/g, "_") + "(classHandle, handle) {" +
              "const env = vm.getEnv();" +
              "this.$classWrapper = klass;" +
              "this.$classHandle = env.newGlobalRef(classHandle);" +
              "this.$handle = (handle !== null) ? env.newGlobalRef(handle) : null;" +
              "this.$weakRef = WeakRef.bind(this, makeHandleDestructor(this.$handle, this.$classHandle));" +
         "};");
+
+        Object.defineProperty(klass, 'name', {
+            enumerable: true,
+            value: simpleName
+        });
 
         classes[name] = klass;
 
@@ -590,14 +610,32 @@ function ClassFactory(api, vm) {
             klass.__fields__ = [];
 
             let ctor = null;
+            let getCtor = function(type) {
+                if (ctor === null) {
+                    vm.perform(() => {
+                        ctor = makeConstructor(klass.__handle__, vm.getEnv());
+                    });
+                }
+                if (!(!!ctor[type])) throw new Error("assertion !!ctor[type] failed");
+                return ctor[type];
+            };
             Object.defineProperty(klass.prototype, "$new", {
                 get: function () {
-                    if (ctor === null) {
-                        vm.perform(() => {
-                            ctor = makeConstructor(klass.__handle__, vm.getEnv());
-                        });
-                    }
-                    return ctor;
+                    return getCtor("allocAndInit");
+                }
+            });
+            Object.defineProperty(klass.prototype, "$alloc", {
+                get: function () {
+                    return function() {
+                        const env = vm.getEnv();
+                        const obj = env.allocObject(this.$classHandle);
+                        return factory.cast(obj, this);
+                    };
+                }
+            });
+            Object.defineProperty(klass.prototype, "$init", {
+                get: function () {
+                    return getCtor("initOnly");
                 }
             });
             klass.prototype.$dispose = dispose;
@@ -633,8 +671,9 @@ function ClassFactory(api, vm) {
             const Constructor = env.javaLangReflectConstructor();
             const invokeObjectMethodNoArgs = env.method('pointer', []);
 
-            const jsMethods = [];
+            const jsCtorMethods = [], jsInitMethods = [];
             const jsRetType = getTypeFromJniTypename(name, false);
+            const jsVoidType = getTypeFromJniTypename("void", false);
             const constructors = invokeObjectMethodNoArgs(env.handle, classHandle, env.javaLangClass().getDeclaredConstructors);
             try {
                 const numConstructors = env.getArrayLength(constructors);
@@ -661,7 +700,8 @@ function ClassFactory(api, vm) {
                         } finally {
                             env.deleteLocalRef(types);
                         }
-                        jsMethods.push(makeMethod(basename(name), CONSTRUCTOR_METHOD, methodId, jsRetType, jsArgTypes, env));
+                        jsCtorMethods.push(makeMethod(basename(name), CONSTRUCTOR_METHOD, methodId, jsRetType, jsArgTypes, env));
+                        jsInitMethods.push(makeMethod(basename(name), INSTANCE_METHOD, methodId, jsVoidType, jsArgTypes, env));
                     } finally {
                         env.deleteLocalRef(constructor);
                     }
@@ -670,10 +710,13 @@ function ClassFactory(api, vm) {
                 env.deleteLocalRef(constructors);
             }
 
-            if (jsMethods.length === 0)
+            if (jsInitMethods.length === 0)
                 throw new Error("no supported overloads");
 
-            return makeMethodDispatcher("<init>", jsMethods);
+            return {
+                "allocAndInit": makeMethodDispatcher("<init>", jsCtorMethods),
+                "initOnly": makeMethodDispatcher("<init>", jsInitMethods)
+            };
         }
 
         function makeField(name, handle, env) {
@@ -735,11 +778,13 @@ function ClassFactory(api, vm) {
                     "return result;";
             }
 
+            const sanitizedName = name.replace(/^[^a-zA-Z_]|[^a-zA-Z0-9_]/g, "_");
+
             let getter;
-            eval("getter = function get" + name + "() {" +
+            eval("getter = function get" + sanitizedName + "() {" +
                 "const isInstance = this.$handle !== null;" +
                 "if (type === INSTANCE_FIELD && !isInstance) { " +
-                    "throw new Error('" + name + ": cannot get an instance field without an instance.');" +
+                    "throw new Error('getter of ' + name + ': cannot get an instance field without an instance.');" +
                 "}" +
                 "const env = vm.getEnv();" +
                 "if (env.pushLocalFrame(" + frameCapacity + ") !== JNI_OK) {" +
@@ -761,6 +806,10 @@ function ClassFactory(api, vm) {
                 "}" +
                 returnStatements +
             "}");
+            Object.defineProperty(getter, 'name', {
+                enumerable: true,
+                value: "get" + name
+            });
 
             let setFunction = null;
             if (type === STATIC_FIELD) {
@@ -777,13 +826,13 @@ function ClassFactory(api, vm) {
             }
 
             let setter;
-            eval("setter = function set" + name + "(value) {" +
+            eval("setter = function set" + sanitizedName + "(value) {" +
                 "const isInstance = this.$handle !== null;" +
                 "if (type === INSTANCE_FIELD && !isInstance) { " +
-                    "throw new Error('" + name + ": cannot set an instance field without an instance');" +
+                    "throw new Error('setter of ' + name + ': cannot set an instance field without an instance');" +
                 "}" +
                 "if (!fieldType.isCompatible(value)) {" +
-                    "throw new Error('Field \"" + name + "\" expected input value compatible with " + fieldType.className + ".');" +
+                    "throw new Error('Field \"' + name + '\" expected input value compatible with " + fieldType.className + ".');" +
                 "}" +
                 "const env = vm.getEnv();" +
                 "if (env.pushLocalFrame(" + frameCapacity + ") !== JNI_OK) {" +
@@ -800,6 +849,10 @@ function ClassFactory(api, vm) {
                 "}" +
                 "env.checkForExceptionAndThrowIt();" +
             "}");
+            Object.defineProperty(setter, 'name', {
+                enumerable: true,
+                value: "set" + name
+            });
 
             const f = {};
             Object.defineProperty(f, 'value', {
@@ -1128,6 +1181,11 @@ function ClassFactory(api, vm) {
                     enumerable: true,
                     value: methods[0].canInvokeWith
                 });
+
+                Object.defineProperty(f, 'handle', {
+                    enumerable: true,
+                    value: methods[0].handle
+                });
             } else {
                 const throwAmbiguousError = function() {
                     throw new Error("Method has more than one overload. Please resolve by for example: `method.overload('int')`");
@@ -1153,19 +1211,24 @@ function ClassFactory(api, vm) {
                     enumerable: true,
                     get: throwAmbiguousError
                 });
+
+                Object.defineProperty(f, 'handle', {
+                    enumerable: true,
+                    get: throwAmbiguousError
+                });
             }
 
             return f;
         }
 
         function makeMethod(methodName, type, methodId, retType, argTypes, env) {
-            let targetMethodId = methodId;
+            let dalvikTargetMethodId = methodId;
             let originalMethodId = null;
+            let originalMethodInfo = null;
 
             const rawRetType = retType.type;
-            const rawArgTypes = argTypes.map(function (t) {
-                return t.type;
-            });
+            const rawArgTypes = argTypes.map((t) => t.type);
+
             let invokeTargetVirtually, invokeTargetDirectly;
             if (type === CONSTRUCTOR_METHOD) {
                 invokeTargetVirtually = env.constructor(rawArgTypes);
@@ -1179,19 +1242,18 @@ function ClassFactory(api, vm) {
             }
 
             let frameCapacity = 2;
-            const argVariableNames = argTypes.map(function (t, i) {
-                return "a" + (i + 1);
-            });
+            const argVariableNames = argTypes.map((t, i) => ("a" + (i + 1)));
             const callArgsVirtual = [
                 "env.handle",
                 type === INSTANCE_METHOD ? "this.$handle" : "this.$classHandle",
-                ((api.flavor === 'art') ? "resolveArtTargetMethodId()" : "targetMethodId")
-            ].concat(argTypes.map(function (t, i) {
+                ((api.flavor === 'art') ? "resolveArtTargetMethodId()" : "dalvikTargetMethodId")
+            ].concat(argTypes.map((t, i) => {
                 if (t.toJni) {
                     frameCapacity++;
-                    return "argTypes[" + i + "].toJni.call(this, " + argVariableNames[i] + ", env)";
+                    return ["argTypes[", i, "].toJni.call(this, ", argVariableNames[i], ", env)"].join("");
+                } else {
+                    return argVariableNames[i];
                 }
-                return argVariableNames[i];
             }));
             let callArgsDirect;
             if (type === INSTANCE_METHOD) {
@@ -1222,8 +1284,9 @@ function ClassFactory(api, vm) {
                 }
             }
             let f;
+            const sanitizedName = methodName.replace(/^[^a-zA-Z_]|[^a-zA-Z0-9_]/g, "_");
             const pendingCalls = new Set();
-            eval("f = function " + methodName + "(" + argVariableNames.join(", ") + ") {" +
+            eval("f = function " + sanitizedName + "(" + argVariableNames.join(", ") + ") {" +
                 "const env = vm.getEnv();" +
                 "if (env.pushLocalFrame(" + frameCapacity + ") !== JNI_OK) {" +
                     "env.exceptionClear();" +
@@ -1254,6 +1317,11 @@ function ClassFactory(api, vm) {
                 returnStatements +
             "};");
 
+            Object.defineProperty(f, 'name', {
+                enumerable: true,
+                value: methodName
+            });
+
             Object.defineProperty(f, 'holder', {
                 enumerable: true,
                 value: klass
@@ -1264,6 +1332,39 @@ function ClassFactory(api, vm) {
                 value: type
             });
 
+            Object.defineProperty(f, 'handle', {
+                enumerable: true,
+                value: methodId
+            });
+
+            function fetchMethod(methodId) {
+                const artMethodSpec = getArtMethodSpec();
+                const artMethodOffset = artMethodSpec.offset;
+                return (['jniCode', 'accessFlags', 'quickCode', 'interpreterCode']
+                    .reduce((original, name) => {
+                        const off = methodId.add(artMethodOffset[name]);
+                        const sfx = (name === "accessFlags" ? "U32" : "Pointer");
+
+                        original[name] = Memory["read" + sfx](off);
+
+                        return original;
+                    }, {}));
+            }
+
+            function patchMethod(methodId, patches) {
+                const artMethodSpec = getArtMethodSpec();
+                const artMethodOffset = artMethodSpec.offset;
+                return (['jniCode', 'accessFlags', 'quickCode', 'interpreterCode']
+                    .reduce((original, name) => {
+                        const off = methodId.add(artMethodOffset[name]);
+                        const sfx = (name === "accessFlags" ? "U32" : "Pointer");
+
+                        Memory["write" + sfx](off, patches[name]);
+
+                        return original;
+                    }, {}));
+            }
+
             let implementation = null;
             function resolveArtTargetMethodId() {
                 if (originalMethodId === null)
@@ -1271,7 +1372,7 @@ function ClassFactory(api, vm) {
 
                 const thread = api["art::Thread::CurrentFromGdb"]();
                 const target = api["art::mirror::Object::Clone"](methodId, thread);
-                Memory.copy(target, originalMethodId, getArtMethodSpec(vm).size);
+                patchMethod(target, originalMethodInfo);
                 return target;
             }
             function replaceArtImplementation(fn) {
@@ -1284,20 +1385,55 @@ function ClassFactory(api, vm) {
 
                 if (originalMethodId === null)
                     originalMethodId = Memory.dup(methodId, artMethodSpec.size);
+                if (originalMethodInfo === null)
+                    originalMethodInfo = fetchMethod(methodId);
 
                 if (fn !== null) {
                     implementation = implement(f, fn);
 
-                    Memory.writePointer(methodId.add(artMethodOffset.jniCode), implementation);
-                    const flagsPtr = methodId.add(artMethodOffset.accessFlags);
-                    Memory.writeU32(flagsPtr, Memory.readU32(flagsPtr) | kAccNative);
-                    Memory.writePointer(methodId.add(artMethodOffset.quickCode), api.art_quick_generic_jni_trampoline);
+                    // We must use the *correct* copy (or address) of art_quick_generic_jni_trampoline
+                    // in order for the stack trace to recognize the JNI stub quick frame
+                    // For ARTs for Android 6.x we can just use the JNI trampoline built in the ART,
+                    let art_quick_generic_jni_trampoline = null;
+
+                    const runtimeSpec = getRuntimeSpec();
+                    const classLinkerSpec = getClassLinkerSpec();
+                    var fail_msg = "unknown failure";
+                    if (runtimeSpec && runtimeSpec.offset.classLinker !== undefined
+                            && classLinkerSpec && classLinkerSpec.offset.quickGenericJniTrampoline !== undefined) {
+                        const runtime = Memory.readPointer(api.runtime_instance_ptr);
+                        if (!runtime.isNull()) {
+                            const classLinker = Memory.readPointer(runtime.add(runtimeSpec.offset.classLinker));
+                            if (!classLinker.isNull()) {
+                                const ptr = Memory.readPointer(classLinker.add(classLinkerSpec.offset.quickGenericJniTrampoline));
+                                if (!ptr.isNull())
+                                    art_quick_generic_jni_trampoline = ptr;
+                                else
+                                    fail_msg = 'runtime->classlinker->quick_generic_jni_trampoline == null';
+                            } else fail_msg = 'runtime->classlinker == null';
+                        } else fail_msg = 'runtime == null';
+                    } else fail_msg = 'unknown Runtime and/or ClassLinker spec for the current VM version';
+
+                    if (art_quick_generic_jni_trampoline === null && runtime.androidVersion.indexOf("6.0.") === 0)
+                        art_quick_generic_jni_trampoline = api.art_quick_generic_jni_trampoline;
+
+                    if (art_quick_generic_jni_trampoline === null)
+                        throw new Error("Cannot find the correct copy of quick generic jni trampoline: " + fail_msg);
+
+                    // kAccFastNative so that the VM doesn't get suspended while executing JNI
+                    // (so that we can modify the ArtMethod on the fly)
+                    const flags = Memory.readU32(methodId.add(artMethodOffset.accessFlags));
+                    patchMethod(methodId, {
+                        'jniCode': implementation,
+                        'accessFlags': Memory.readU32(methodId.add(artMethodOffset.accessFlags)) | kAccNative | kAccFastNative,
+                        'quickCode': art_quick_generic_jni_trampoline,
+                        'interpreterCode': api.artInterpreterToCompiledCodeBridge});
 
                     patchedMethods.add(f);
                 } else {
                     patchedMethods.delete(f);
 
-                    Memory.copy(methodId, originalMethodId, artMethodSpec.size);
+                    patchMethod(methodId, originalMethodInfo);
                     implementation = null;
                 }
             }
@@ -1308,13 +1444,13 @@ function ClassFactory(api, vm) {
 
                 if (originalMethodId === null) {
                     originalMethodId = Memory.dup(methodId, DVM_METHOD_SIZE);
-                    targetMethodId = Memory.dup(methodId, DVM_METHOD_SIZE);
+                    dalvikTargetMethodId = Memory.dup(methodId, DVM_METHOD_SIZE);
                 }
 
                 if (fn !== null) {
                     implementation = implement(f, fn);
 
-                    let argsSize = argTypes.reduce(function (acc, t) { return acc + t.size; }, 0);
+                    let argsSize = argTypes.reduce((acc, t) => (acc + t.size), 0);
                     if (type === INSTANCE_METHOD) {
                         argsSize++;
                     }
@@ -1391,8 +1527,8 @@ function ClassFactory(api, vm) {
                 const method = entry.targetMethods[key];
                 if (!method) {
                     const methodIndex = entry.shadowVtableCount++;
-                    Memory.writePointer(entry.shadowVtable.add(methodIndex * pointerSize), targetMethodId);
-                    Memory.writeU16(targetMethodId.add(DVM_METHOD_OFFSET_METHOD_INDEX), methodIndex);
+                    Memory.writePointer(entry.shadowVtable.add(methodIndex * pointerSize), dalvikTargetMethodId);
+                    Memory.writeU16(dalvikTargetMethodId.add(DVM_METHOD_OFFSET_METHOD_INDEX), methodIndex);
                     Memory.writeS32(entry.vtableCountPtr, entry.shadowVtableCount);
 
                     entry.targetMethods[key] = f;
@@ -1403,7 +1539,9 @@ function ClassFactory(api, vm) {
                 get: function () {
                     return implementation;
                 },
-                set: api.flavor === 'art' ? replaceArtImplementation : replaceDalvikImplementation
+                set: type == CONSTRUCTOR_METHOD ? (function () {
+                    throw new Error("Reimplementing $new is not possible. Please replace implementation of $init instead.");
+                }) : (api.flavor === 'art' ? replaceArtImplementation : replaceDalvikImplementation)
             });
 
             Object.defineProperty(f, 'returnType', {
@@ -1459,13 +1597,11 @@ function ClassFactory(api, vm) {
     }
 
     function makeHandleDestructor() {
-        const handles = Array.prototype.slice.call(arguments).filter(function (h) {
-            return h !== null;
-        });
+        const handles = Array.prototype.slice.call(arguments).filter((h) => (h !== null));
         return () => {
             vm.perform(() => {
                 const env = vm.getEnv();
-                handles.forEach(env.deleteGlobalRef, env);
+                handles.forEach((ref) => (env.deleteGlobalRef(ref)), env);
             });
         };
     }
@@ -1474,10 +1610,7 @@ function ClassFactory(api, vm) {
         const env = vm.getEnv();
 
         if (method.hasOwnProperty('overloads')) {
-            if (method.overloads.length > 1) {
-                throw new Error("Method has more than one overload. Please resolve by for example: `method.overload('int')`");
-            }
-            method = method.overloads[0];
+            throw new Error("Only re-implementing a concrete (specific) method is possible, not an method \"dispatcher\"");
         }
 
         const C = method.holder;
@@ -1486,19 +1619,18 @@ function ClassFactory(api, vm) {
         const argTypes = method.argumentTypes;
         const methodName = method.name;
         const rawRetType = retType.type;
-        const rawArgTypes = argTypes.map(function (t) { return t.type; });
+        const rawArgTypes = argTypes.map((t) => (t.type));
         const pendingCalls = method[PENDING_CALLS];
 
         let frameCapacity = 2;
-        const argVariableNames = argTypes.map(function (t, i) {
-            return "a" + (i + 1);
-        });
-        const callArgs = argTypes.map(function (t, i) {
+        const argVariableNames = argTypes.map((t, i) => ("a" + (i + 1)));
+        const callArgs = argTypes.map((t, i) => {
             if (t.fromJni) {
                 frameCapacity++;
-                return "argTypes[" + i + "].fromJni.call(self, " + argVariableNames[i] + ", env)";
+                return ["argTypes[", i, "].fromJni.call(self, ", argVariableNames[i], ", env)"].join("");
+            } else {
+                return argVariableNames[i];
             }
-            return argVariableNames[i];
         });
         let returnCapture, returnStatements, returnNothing;
         if (rawRetType === 'void') {
@@ -1514,7 +1646,7 @@ function ClassFactory(api, vm) {
                         "if (retType.isCompatible.call(this, result)) {" +
                             "rawResult = retType.toJni.call(this, result, env);" +
                         "} else {" +
-                            "throw new Error(\"Implementation for " + methodName + " expected return value compatible with '" + retType.className + "'.\");" +
+                            "throw new Error(\"Implementation for \" + methodName + \" expected return value compatible with '\" + retType.className + \"'.\");" +
                         "}";
                 if (retType.type === 'pointer') {
                     returnStatements += "} catch (e) {" +
@@ -1537,8 +1669,9 @@ function ClassFactory(api, vm) {
                 returnNothing = "return 0;";
             }
         }
+        const sanitizedName = methodName.replace(/^[^a-zA-Z$_]|[^a-zA-Z0-9$_]/g, "_");
         let f;
-        eval("f = function " + methodName + "(" + ["envHandle", "thisHandle"].concat(argVariableNames).join(", ") + ") {" +
+        eval("f = function " + sanitizedName + "(" + ["envHandle", "thisHandle"].concat(argVariableNames).join(", ") + ") {" +
             "const env = new Env(envHandle);" +
             "if (env.pushLocalFrame(" + frameCapacity + ") !== JNI_OK) {" +
                 "return;" +
@@ -1562,6 +1695,11 @@ function ClassFactory(api, vm) {
             returnStatements +
         "};");
 
+        Object.defineProperty(f, 'name', {
+            enumerable: true,
+            value: methodName
+        });
+
         Object.defineProperty(f, 'type', {
             enumerable: true,
             value: type
@@ -1584,9 +1722,7 @@ function ClassFactory(api, vm) {
                     return false;
                 }
 
-                return argTypes.every(function (t, i) {
-                    return t.isCompatible(args[i]);
-                });
+                return argTypes.every((t, i) => (t.isCompatible(args[i])));
             }
         });
 
@@ -2405,6 +2541,10 @@ function Env(handle) {
         return impl(this.handle, ref1, ref2) ? true : false;
     });
 
+    Env.prototype.allocObject = proxy(27, 'pointer', ['pointer', 'pointer'], function(impl, clazz) {
+        return impl(this.handle, clazz);
+    });
+
     Env.prototype.getObjectClass = proxy(31, 'pointer', ['pointer', 'pointer'], function (impl, obj) {
         return impl(this.handle, obj);
     });
@@ -2995,66 +3135,241 @@ function Env(handle) {
     };
 })();
 
-let _artMethodSpec = null;
-function getArtMethodSpec(vm) {
-    if (_artMethodSpec !== null)
-        return _artMethodSpec;
+function resolveStructSpec(vm) {
+    if (this._current !== undefined)
+        return this._current;
 
-    vm.perform(() => {
-        const env = vm.getEnv();
-        const process = env.findClass("android/os/Process");
-        const setArgV0 = env.getStaticMethodId(process, "setArgV0", "(Ljava/lang/String;)V");
-
-        const runtimeModule = Process.getModuleByName("libandroid_runtime.so");
-        const runtimeStart = runtimeModule.base;
-        const runtimeEnd = runtimeStart.add(runtimeModule.size);
-
-        const expectedAccessFlags = kAccPublic | kAccStatic | kAccFinal | kAccNative;
-
-        let jniCodeOffset = -1;
-        let accessFlagsOffset = -1;
-        let remaining = 2;
-        for (let offset = 0; offset !== 64 && remaining !== 0; offset += 4) {
-            const field = setArgV0.add(offset);
-
-            if (jniCodeOffset === -1) {
-                const address = Memory.readPointer(field);
-                if (address.compare(runtimeStart) >= 0 && address.compare(runtimeEnd) === -1) {
-                    jniCodeOffset = offset;
-                    remaining--;
-                }
-            }
-
-            if (accessFlagsOffset === -1) {
-                const flags = Memory.readU32(field);
-                if (flags === expectedAccessFlags) {
-                    accessFlagsOffset = offset;
-                    remaining--;
-                }
+    let specByPointerSize = this[runtime.androidVersion.substr(0, 4)];
+    if (specByPointerSize === undefined) {
+        if (this._default) {
+            let spec = this._default(vm);
+            if (k) {
+                this._current = spec;
+                return spec;
             }
         }
+        specByPointerSize = this.git;
+    }
 
-        if (remaining !== 0)
-            throw new Error('Unable to determine ArtMethod field offsets');
-
-        const isMarshmallowOrNewer = accessFlagsOffset < jniCodeOffset;
-
-        const size = isMarshmallowOrNewer
-            ? (jniCodeOffset + (2 * pointerSize))
-            : (accessFlagsOffset + 16);
-
-        _artMethodSpec = {
-            size: size,
-            offset: {
-                jniCode: jniCodeOffset,
-                quickCode: jniCodeOffset + pointerSize,
-                accessFlags: accessFlagsOffset,
-            }
-        };
-    });
-
-    return _artMethodSpec;
+    this._current = specByPointerSize && specByPointerSize[Process.pointerSize];
+    return this._current;
 }
+
+const getArtMethodSpec = resolveStructSpec.bind({
+    '5.0.': {
+        4: {
+            size: 72,
+            offset: {
+                klass: 0,
+                monitor: 4,
+                declaringClass: 8,
+                dexCacheResolvedMethods: 12,
+                dexCacheResolvedTypes: 16,
+                dexCacheStrings: 20,
+                interpreterCode: 24,
+                jniCode: 32,
+                quickCode: 40,
+                gcMap: 48,
+                accessFlags: 56,
+                dexItemIndex: 60,
+                dexMethodIndex: 64,
+                index: 68
+            }
+        },
+        8: {
+            size: 72,
+            offset: {
+                klass: 0,
+                monitor: 4,
+                declaringClass: 8,
+                dexCacheResolvedMethods: 12,
+                dexCacheResolvedTypes: 16,
+                dexCacheStrings: 20,
+                interpreterCode: 24,
+                jniCode: 32,
+                quickCode: 40,
+                gcMap: 48,
+                accessFlags: 56,
+                dexItemIndex: 60,
+                dexMethodIndex: 64,
+                index: 68
+            }
+        }
+    },
+    '5.1.': {
+        4: {
+            size: 48,
+            offset: {
+                jniCode: 40,
+                quickCode: 44,
+                accessFlags: 20,
+                dexItemIndex: 24,
+                dexMethodIndex: 28,
+                index: 32
+            }
+        },
+        8: {
+            size: 60,
+            offset: {
+                jniCode: 44,
+                quickCode: 52,
+                accessFlags: 20,
+                dexItemIndex: 24,
+                dexMethodIndex: 28,
+                index: 32
+            }
+        }
+    },
+    '6.0.': {
+        4: {
+            size: 40,
+            offset: {
+                interpreterCode: 28,
+                jniCode: 32,
+                quickCode: 36,
+                accessFlags: 12,
+                dexItemIndex: 16,
+                dexMethodIndex: 20,
+                index: 24
+            }
+        },
+        8: {
+            size: 52,
+            offset: {
+                interpreterCode: 28,
+                jniCode: 36,
+                quickCode: 44,
+                accessFlags: 12,
+                dexItemIndex: 16,
+                dexMethodIndex: 20,
+                index: 24
+            }
+        },
+    },
+    git: {
+        4: {
+            size: 36,
+            offset: {
+                jniCode: 28,
+                quickCode: 32,
+                accessFlags: 4,
+                dexItemIndex: 8,
+                dexMethodIndex: 12,
+                index: 16
+            }
+        },
+        8: {
+            size: 52,
+            offset: {
+                jniCode: 36,
+                quickCode: 44,
+                accessFlags: 4,
+                dexItemIndex: 8,
+                dexMethodIndex: 12,
+                index: 16
+            }
+        },
+    },
+    _default: function (vm) {
+        let _artMethodSpec;
+
+        vm.perform(() => {
+            const env = vm.getEnv();
+            const process = env.findClass("android/os/Process");
+            const setArgV0 = env.getStaticMethodId(process, "setArgV0", "(Ljava/lang/String;)V");
+
+            const runtimeModule = Process.getModuleByName("libandroid_runtime.so");
+            const runtimeStart = runtimeModule.base;
+            const runtimeEnd = runtimeStart.add(runtimeModule.size);
+
+            const expectedAccessFlags = kAccPublic | kAccStatic | kAccFinal | kAccNative;
+
+            let jniCodeOffset = null;
+            let accessFlagsOffset = null;
+            let remaining = 2;
+            for (let offset = 0; offset !== 64 && remaining !== 0; offset += 4) {
+                const field = setArgV0.add(offset);
+
+                if (jniCodeOffset === null && offset % pointerSize == 0) {
+                    const address = Memory.readPointer(field);
+                    if (address.compare(runtimeStart) >= 0 && address.compare(runtimeEnd) < 0) {
+                        jniCodeOffset = offset;
+                        remaining--;
+                    }
+                }
+
+                if (accessFlagsOffset === null) {
+                    const flags = Memory.readU32(field);
+                    if (flags === expectedAccessFlags) {
+                        accessFlagsOffset = offset;
+                        remaining--;
+                    }
+                }
+            }
+
+            if (remaining !== 0)
+                throw new Error('Unable to determine ArtMethod field offsets');
+
+            const isMarshmallowOrNewer = accessFlagsOffset < jniCodeOffset;
+
+            const size = isMarshmallowOrNewer
+                ? (jniCodeOffset + (2 * pointerSize))
+                : (accessFlagsOffset + 16);
+
+            _artMethodSpec = {
+                size: size,
+                offset: {
+                    interpreterCode: jniCodeOffset - pointerSize,
+                    jniCode: jniCodeOffset,
+                    quickCode: jniCodeOffset + pointerSize,
+                    accessFlags: accessFlagsOffset,
+                }
+            };
+        });
+
+        return _artMethodSpec;
+    }
+});
+
+const getRuntimeSpec = resolveStructSpec.bind({
+    '5.0.': {
+        4: {
+            // size: 680, // unsure
+            offset: {
+                classLinker: 208
+            }
+        }
+    },
+    '6.0.': {
+        4: {
+            offset: {
+                classLinker: 236
+            }
+        }
+    },
+});
+
+const getClassLinkerSpec = resolveStructSpec.bind({
+    '5.0.': {
+        4: {
+            size: 228,
+            offset: {
+                portableResolutionTrampoline: 208,
+                quickResolutionTrampoline: 212,
+                portableImConflictTrampoline: 216,
+                quickImtConflictTrampoline: 220,
+                quickGenericJniTrampoline: 224
+            }
+        }
+    },
+    '6.0.': {
+        4: {
+            offset: {
+                quickGenericJniTrampoline: 296
+            }
+        }
+    }
+});
 
 let _api = null;
 function getApi() {
@@ -3071,18 +3386,28 @@ function getApi() {
             module: "libart.so",
             functions: {
                 "JNI_GetCreatedJavaVMs": ["JNI_GetCreatedJavaVMs", 'int', ['pointer', 'int', 'pointer']],
+                // NOTE artQuickGenericJniTrampoline and its friends have *completely* different purposes and calling convention, so please DO NOT use them for quickCode!
                 "art_quick_generic_jni_trampoline": function (address) {
                     this.art_quick_generic_jni_trampoline = address;
                 },
-                "artQuickGenericJniTrampoline": function (address) {
-                    this.art_quick_generic_jni_trampoline = address;
+                "art_quick_to_interpreter_bridge": function (address) {
+                    this.art_quick_to_interpreter_bridge = address;
+                },
+                "artInterpreterToCompiledCodeBridge": function (address) {
+                    this.artInterpreterToCompiledCodeBridge = address;
                 },
                 "_ZN3art6Thread14CurrentFromGdbEv": ["art::Thread::CurrentFromGdb", 'pointer', []],
+                "_ZNK3art6Thread13DecodeJObjectEP8_jobject": ["art::Thread::DecodeJObject", 'pointer', ['pointer', 'pointer']],
                 "_ZN3art6mirror6Object5CloneEPNS_6ThreadE": ["art::mirror::Object::Clone", 'pointer', ['pointer', 'pointer']],
             },
+            variables: {
+                "_ZN3art7Runtime9instance_E": function (address) {
+                    this.runtime_instance_ptr = address;
+                }
+            },
             optionals: {
-                "art_quick_generic_jni_trampoline": "< 6.0",
-                "artQuickGenericJniTrampoline": ">= 6.0",
+                "art_quick_generic_jni_trampoline": ">= 6.0",
+                "art_quick_to_interpreter_bridge": ">= 6.0",
             }
         }] : [{
             module: "libdvm.so",
