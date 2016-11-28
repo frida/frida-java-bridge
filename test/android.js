@@ -1,13 +1,13 @@
 'use strict';
 
-/* global describe, before, after, afterEach, it */
+/* global describe, before, it */
 
 const Promise = require('bluebird');
 require('bluebird-co');
 
 const frida = require('frida');
 const readFile = Promise.promisify(require('fs').readFile);
-const should = require('should');
+require('should');
 
 describe('Android', function () {
   let device, pid, session, script, agent;
@@ -48,6 +48,6 @@ describe('Android', function () {
   }));
 });
 
-function onMessage(message, data) {
+function onMessage (message, data) {
   console.log(message);
 }
