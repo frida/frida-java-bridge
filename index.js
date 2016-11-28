@@ -1411,13 +1411,13 @@ function ClassFactory(api, vm) {
                                 else
                                     errorMessage = 'runtime->classlinker->quick_generic_jni_trampoline == null';
                             } else {
-                              errorMessage = 'runtime->classlinker == null';
+                                errorMessage = 'runtime->classlinker == null';
                             }
                         } else {
-                          errorMessage = 'runtime == null';
+                            errorMessage = 'runtime == null';
                         }
                     } else {
-                      errorMessage = 'unknown Runtime and/or ClassLinker spec for the current VM version';
+                        errorMessage = 'unknown Runtime and/or ClassLinker spec for the current VM version';
                     }
 
                     if (art_quick_generic_jni_trampoline === null && runtime.androidVersion.indexOf("6.0.") === 0)
