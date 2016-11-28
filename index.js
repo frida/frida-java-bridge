@@ -3142,10 +3142,11 @@ function resolveStructSpec(vm) {
     let specByPointerSize = this[runtime.androidVersion.substr(0, 4)];
     if (specByPointerSize === undefined) {
         if (this._default) {
-            let spec = this._default(vm);
-            if (k) {
+            try {
+                const spec = this._default(vm);
                 this._current = spec;
                 return spec;
+            } catch (e) {
             }
         }
         specByPointerSize = this.git;
