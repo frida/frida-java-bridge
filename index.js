@@ -1398,9 +1398,9 @@ function ClassFactory(api, vm) {
 
                     const runtimeSpec = getRuntimeSpec();
                     const classLinkerSpec = getClassLinkerSpec();
-                    var fail_msg = "unknown failure";
+                    let errorMessage;
                     if (runtimeSpec && runtimeSpec.offset.classLinker !== undefined
-                            && classLinkerSpec && classLinkerSpec.offset.quickGenericJniTrampoline !== undefined) {
+                        && classLinkerSpec && classLinkerSpec.offset.quickGenericJniTrampoline !== undefined) {
                         const runtime = Memory.readPointer(api.runtime_instance_ptr);
                         if (!runtime.isNull()) {
                             const classLinker = Memory.readPointer(runtime.add(runtimeSpec.offset.classLinker));
@@ -1409,16 +1409,22 @@ function ClassFactory(api, vm) {
                                 if (!ptr.isNull())
                                     art_quick_generic_jni_trampoline = ptr;
                                 else
-                                    fail_msg = 'runtime->classlinker->quick_generic_jni_trampoline == null';
-                            } else fail_msg = 'runtime->classlinker == null';
-                        } else fail_msg = 'runtime == null';
-                    } else fail_msg = 'unknown Runtime and/or ClassLinker spec for the current VM version';
+                                    errorMessage = 'runtime->classlinker->quick_generic_jni_trampoline == null';
+                            } else {
+                              errorMessage = 'runtime->classlinker == null';
+                            }
+                        } else {
+                          errorMessage = 'runtime == null';
+                        }
+                    } else {
+                      errorMessage = 'unknown Runtime and/or ClassLinker spec for the current VM version';
+                    }
 
                     if (art_quick_generic_jni_trampoline === null && runtime.androidVersion.indexOf("6.0.") === 0)
                         art_quick_generic_jni_trampoline = api.art_quick_generic_jni_trampoline;
 
                     if (art_quick_generic_jni_trampoline === null)
-                        throw new Error("Cannot find the correct copy of quick generic jni trampoline: " + fail_msg);
+                        throw new Error("Cannot find the correct copy of quick generic jni trampoline: " + errorMessage);
 
                     // kAccFastNative so that the VM doesn't get suspended while executing JNI
                     // (so that we can modify the ArtMethod on the fly)
