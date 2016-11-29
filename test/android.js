@@ -21,6 +21,19 @@ describe('Android', function () {
 
   it('should detect internal field offsets correctly', Promise.coroutine(function* () {
     const ids = yield getConnectedDevicesIds();
+    ids.sort();
+
+    // 5.0
+    // const ids = ['emulator-5554'];
+
+    // 5.1
+    // const ids = ['emulator-5556'];
+
+    // 6.0
+    // const ids = ['emulator-5558'];
+
+    // 6.0 64-bit
+    // const ids = ['03157df369703a2a'];
 
     for (let i = 0; i !== ids.length; i++) {
       const device = yield frida.getDevice(ids[i], 500);
@@ -47,6 +60,20 @@ describe('Android', function () {
         classLinkerOffset.should.equal(236);
       } else if (version.startsWith('6.0') && pointerSize === 8) {
         classLinkerOffset.should.equal(392);
+      } else {
+        throw new Error('Unhandled flavor');
+      }
+
+      const linkerSpec = yield agent.getArtClassLinkerSpec();
+      const trampolineOffset = linkerSpec.offset.quickGenericJniTrampoline;
+      if (version.startsWith('5.0') && pointerSize === 4) {
+        trampolineOffset.should.equal(224);
+      } else if (version.startsWith('5.1') && pointerSize === 4) {
+        trampolineOffset.should.equal(296);
+      } else if (version.startsWith('6.0') && pointerSize === 4) {
+        trampolineOffset.should.equal(296);
+      } else if (version.startsWith('6.0') && pointerSize === 8) {
+        trampolineOffset.should.equal(440);
       } else {
         throw new Error('Unhandled flavor');
       }
