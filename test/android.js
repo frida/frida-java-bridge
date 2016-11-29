@@ -1,52 +1,69 @@
 'use strict';
 
-/* global describe, before, it */
+/* global before, describe, it */
 
 const Promise = require('bluebird');
 require('bluebird-co');
 
+const exec = require('child_process').exec;
 const frida = require('frida');
 const readFile = Promise.promisify(require('fs').readFile);
 require('should');
 
 describe('Android', function () {
-  let device, pid, session, script, agent;
+  let agentCode;
 
   this.timeout(30000);
 
   before(Promise.coroutine(function* () {
-    device = yield frida.getUsbDevice(3000);
-
-    pid = yield device.spawn(['com.android.browser']);
-
-    session = yield device.attach(pid);
-
-    const source = yield readFile(require.resolve('./_agent'), 'utf8');
-    script = yield session.createScript(source);
-    script.events.listen('message', onMessage);
-    yield script.load();
-    agent = yield script.getExports();
+    agentCode = yield readFile(require.resolve('./_agent'), 'utf8');
   }));
 
-  it('should be able to enumerate loaded classes', Promise.coroutine(function* () {
-    yield device.resume(pid);
+  it('should detect internal field offsets correctly', Promise.coroutine(function* () {
+    const ids = yield getConnectedDevicesIds();
+    console.log('ids:', ids);
 
-    yield agent.enumerateLoadedClasses();
-  }));
+    for (let i = 0; i !== ids.length; i++) {
+      const device = yield frida.getDevice(ids[i], 500);
 
-  it('should be able to hook a system method', Promise.coroutine(function* () {
-    console.log('hooking');
-    yield agent.hookUrlApi();
+      const session = yield device.attach('com.android.systemui');
 
-    console.log('resuming');
-    yield device.resume(pid);
+      const script = yield session.createScript(agentCode);
+      script.events.listen('message', onMessage);
+      yield script.load();
 
-    console.log('w00t, waiting 3 seconds');
-    yield Promise.delay(3000);
+      const agent = yield script.getExports();
 
-    console.log('done');
+      const version = yield agent.getAndroidVersion();
+      console.log('version=' + version);
+
+      yield script.unload();
+      yield session.detach();
+    }
   }));
 });
+
+function getConnectedDevicesIds () {
+  return new Promise((resolve, reject) => {
+    exec('adb devices -l', (error, stdout, stderr) => {
+      if (error !== null) {
+        reject(error);
+        return;
+      }
+
+      const ids = stdout.split('\n').slice(1)
+      .filter(line => {
+        return line.length > 0;
+      })
+      .map(line => {
+        const tokens = line.split(' ', 2);
+        return tokens[0];
+      });
+
+      resolve(ids);
+    });
+  });
+}
 
 function onMessage (message, data) {
   console.log(message);
