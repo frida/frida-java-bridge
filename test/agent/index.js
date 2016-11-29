@@ -1,6 +1,10 @@
 'use strict';
 
-const {getRuntimeSpec, getClassLinkerSpec} = require('../../lib/android');
+const {
+  getArtRuntimeSpec,
+  getArtClassLinkerSpec,
+  getArtMethodSpec
+} = require('../../lib/android');
 const Java = require('../..');
 
 rpc.exports = {
@@ -16,13 +20,19 @@ rpc.exports = {
 
   getArtRuntimeSpec() {
     return performOnJavaVM(() => {
-      return getRuntimeSpec(Java.vm, Java.classFactory);
+      return getArtRuntimeSpec(Java.vm, Java.classFactory);
     });
   },
 
   getArtClassLinkerSpec() {
     return performOnJavaVM(() => {
-      return getClassLinkerSpec(Java.vm, Java.classFactory);
+      return getArtClassLinkerSpec(Java.vm, Java.classFactory);
+    });
+  },
+
+  getArtMethodSpec() {
+    return performOnJavaVM(() => {
+      return getArtMethodSpec(Java.vm, Java.classFactory);
     });
   },
 };

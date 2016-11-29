@@ -78,6 +78,32 @@ describe('Android', function () {
         throw new Error('Unhandled flavor');
       }
 
+      const methodSpec = yield agent.getArtMethodSpec();
+      const methodOffset = methodSpec.offset;
+      if (version.startsWith('5.0') && pointerSize === 4) {
+        methodOffset.interpreterCode.should.equal(24);
+        methodOffset.jniCode.should.equal(32);
+        methodOffset.quickCode.should.equal(40);
+        methodOffset.accessFlags.should.equal(56);
+      } else if (version.startsWith('5.1') && pointerSize === 4) {
+        methodOffset.interpreterCode.should.equal(36);
+        methodOffset.jniCode.should.equal(40);
+        methodOffset.quickCode.should.equal(44);
+        methodOffset.accessFlags.should.equal(20);
+      } else if (version.startsWith('6.0') && pointerSize === 4) {
+        methodOffset.interpreterCode.should.equal(28);
+        methodOffset.jniCode.should.equal(32);
+        methodOffset.quickCode.should.equal(36);
+        methodOffset.accessFlags.should.equal(12);
+      } else if (version.startsWith('6.0') && pointerSize === 8) {
+        methodOffset.interpreterCode.should.equal(32);
+        methodOffset.jniCode.should.equal(40);
+        methodOffset.quickCode.should.equal(48);
+        methodOffset.accessFlags.should.equal(12);
+      } else {
+        throw new Error('Unhandled flavor');
+      }
+
       yield script.unload();
       yield session.detach();
     }
