@@ -21,7 +21,6 @@ describe('Android', function () {
 
   it('should detect internal field offsets correctly', Promise.coroutine(function* () {
     const ids = yield getConnectedDevicesIds();
-    console.log('ids:', ids);
 
     for (let i = 0; i !== ids.length; i++) {
       const device = yield frida.getDevice(ids[i], 500);
@@ -35,7 +34,22 @@ describe('Android', function () {
       const agent = yield script.getExports();
 
       const version = yield agent.getAndroidVersion();
-      console.log('version=' + version);
+      const pointerSize = yield agent.getPointerSize();
+      console.log('id:', ids[i], 'version:', version, 'pointerSize:', pointerSize);
+
+      const runtimeSpec = yield agent.getArtRuntimeSpec();
+      const classLinkerOffset = runtimeSpec.offset.classLinker;
+      if (version.startsWith('5.0') && pointerSize === 4) {
+        classLinkerOffset.should.equal(208);
+      } else if (version.startsWith('5.1') && pointerSize === 4) {
+        classLinkerOffset.should.equal(212);
+      } else if (version.startsWith('6.0') && pointerSize === 4) {
+        classLinkerOffset.should.equal(236);
+      } else if (version.startsWith('6.0') && pointerSize === 8) {
+        classLinkerOffset.should.equal(392);
+      } else {
+        throw new Error('Unhandled flavor');
+      }
 
       yield script.unload();
       yield session.detach();

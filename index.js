@@ -279,6 +279,20 @@ function Runtime () {
     return mainLooper.$isSameObject(myLooper);
   };
 
+  Object.defineProperty(this, 'vm', {
+    enumerable: false,
+    get: function () {
+      return vm;
+    }
+  });
+
+  Object.defineProperty(this, 'classFactory', {
+    enumerable: false,
+    get: function () {
+      return classFactory;
+    }
+  });
+
   function isAppProcess () {
     if (cachedIsAppProcess === null) {
       const readlink = new NativeFunction(Module.findExportByName(null, 'readlink'), 'pointer', ['pointer', 'pointer', 'pointer']);

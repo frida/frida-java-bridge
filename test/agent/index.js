@@ -1,13 +1,24 @@
 'use strict';
 
+const {getRuntimeSpec} = require('../../lib/android');
 const Java = require('../..');
 
 rpc.exports = {
+  getPointerSize() {
+    return Process.pointerSize;
+  },
+
   getAndroidVersion() {
     return performOnJavaVM(() => {
       return Java.androidVersion;
     });
   },
+
+  getArtRuntimeSpec() {
+    return performOnJavaVM(() => {
+      return getRuntimeSpec(Java.vm, Java.classFactory);
+    });
+  }
 };
 
 function performOnJavaVM (task) {
