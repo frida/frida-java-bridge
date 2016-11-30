@@ -7,6 +7,8 @@ const {
 } = require('../../lib/android');
 const Java = require('../..');
 
+let hookTriggerCount = 0;
+
 rpc.exports = {
   getPointerSize() {
     return Process.pointerSize;
@@ -35,6 +37,31 @@ rpc.exports = {
       return getArtMethodSpec(Java.vm, Java.classFactory);
     });
   },
+
+  getHookTriggerCount() {
+    return hookTriggerCount;
+  },
+
+  callJavaMethod() {
+    return performOnJavaVM(() => {
+      const URL = Java.use('java.net.URL');
+
+      const url = URL.$new('http://www.ikke.no/');
+      const host = url.getHost();
+      console.log('host=' + host);
+    });
+  },
+
+  hookJavaMethod() {
+    return performOnJavaVM(() => {
+      const URL = Java.use('java.net.URL');
+
+      URL.getHost.implementation = function () {
+        hookTriggerCount++;
+        return this.getHost();
+      };
+    });
+  }
 };
 
 function performOnJavaVM (task) {

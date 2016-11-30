@@ -1,6 +1,6 @@
 'use strict';
 
-/* global before, describe, it */
+/* global describe, it */
 
 const Promise = require('bluebird');
 require('bluebird-co');
@@ -11,15 +11,89 @@ const readFile = Promise.promisify(require('fs').readFile);
 require('should');
 
 describe('Android', function () {
-  let agentCode;
-
   this.timeout(30000);
 
-  before(Promise.coroutine(function* () {
-    agentCode = yield readFile(require.resolve('./_agent'), 'utf8');
+  it('should detect internal field offsets correctly', onEachConnectedDevice(function* (agent, deviceId) {
+    const version = yield agent.getAndroidVersion();
+    const pointerSize = yield agent.getPointerSize();
+    console.log('id:', deviceId, 'version:', version, 'pointerSize:', pointerSize);
+
+    const runtimeSpec = yield agent.getArtRuntimeSpec();
+    const classLinkerOffset = runtimeSpec.offset.classLinker;
+    if (version.startsWith('5.0') && pointerSize === 4) {
+      classLinkerOffset.should.equal(208);
+    } else if (version.startsWith('5.1') && pointerSize === 4) {
+      classLinkerOffset.should.equal(212);
+    } else if (version.startsWith('6.0') && pointerSize === 4) {
+      classLinkerOffset.should.equal(236);
+    } else if (version.startsWith('6.0') && pointerSize === 8) {
+      classLinkerOffset.should.equal(392);
+    } else {
+      throw new Error('Unhandled flavor');
+    }
+
+    const linkerSpec = yield agent.getArtClassLinkerSpec();
+    const trampolineOffset = linkerSpec.offset.quickGenericJniTrampoline;
+    if (version.startsWith('5.0') && pointerSize === 4) {
+      trampolineOffset.should.equal(224);
+    } else if (version.startsWith('5.1') && pointerSize === 4) {
+      trampolineOffset.should.equal(296);
+    } else if (version.startsWith('6.0') && pointerSize === 4) {
+      trampolineOffset.should.equal(296);
+    } else if (version.startsWith('6.0') && pointerSize === 8) {
+      trampolineOffset.should.equal(440);
+    } else {
+      throw new Error('Unhandled flavor');
+    }
+
+    const methodSpec = yield agent.getArtMethodSpec();
+    const methodOffset = methodSpec.offset;
+    if (version.startsWith('5.0') && pointerSize === 4) {
+      methodOffset.interpreterCode.should.equal(24);
+      methodOffset.jniCode.should.equal(32);
+      methodOffset.quickCode.should.equal(40);
+      methodOffset.accessFlags.should.equal(56);
+    } else if (version.startsWith('5.1') && pointerSize === 4) {
+      methodOffset.interpreterCode.should.equal(36);
+      methodOffset.jniCode.should.equal(40);
+      methodOffset.quickCode.should.equal(44);
+      methodOffset.accessFlags.should.equal(20);
+    } else if (version.startsWith('6.0') && pointerSize === 4) {
+      methodOffset.interpreterCode.should.equal(28);
+      methodOffset.jniCode.should.equal(32);
+      methodOffset.quickCode.should.equal(36);
+      methodOffset.accessFlags.should.equal(12);
+    } else if (version.startsWith('6.0') && pointerSize === 8) {
+      methodOffset.interpreterCode.should.equal(32);
+      methodOffset.jniCode.should.equal(40);
+      methodOffset.quickCode.should.equal(48);
+      methodOffset.accessFlags.should.equal(12);
+    } else {
+      throw new Error('Unhandled flavor');
+    }
   }));
 
-  it('should detect internal field offsets correctly', Promise.coroutine(function* () {
+  it('should support hooking methods', onEachConnectedDevice(function* (agent) {
+    let countBefore, countAfter;
+
+    countBefore = yield agent.getHookTriggerCount();
+    yield agent.callJavaMethod();
+    countAfter = yield agent.getHookTriggerCount();
+    countAfter.should.equal(countBefore);
+
+    yield agent.hookJavaMethod();
+
+    countBefore = yield agent.getHookTriggerCount();
+    yield agent.callJavaMethod();
+    countAfter = yield agent.getHookTriggerCount();
+    countAfter.should.equal(countBefore + 1);
+  }));
+});
+
+let cachedAgentCode = null;
+
+function onEachConnectedDevice (operation) {
+  return Promise.coroutine(function* () {
     const ids = yield getConnectedDevicesIds();
     ids.sort();
 
@@ -36,79 +110,28 @@ describe('Android', function () {
     // const ids = ['03157df369703a2a'];
 
     for (let i = 0; i !== ids.length; i++) {
-      const device = yield frida.getDevice(ids[i], 500);
+      const id = ids[i];
+
+      const device = yield frida.getDevice(id, 500);
 
       const session = yield device.attach('com.android.systemui');
 
-      const script = yield session.createScript(agentCode);
+      if (cachedAgentCode === null) {
+        cachedAgentCode = yield readFile(require.resolve('./_agent'), 'utf8');
+      }
+      const script = yield session.createScript(cachedAgentCode);
       script.events.listen('message', onMessage);
       yield script.load();
 
       const agent = yield script.getExports();
 
-      const version = yield agent.getAndroidVersion();
-      const pointerSize = yield agent.getPointerSize();
-      console.log('id:', ids[i], 'version:', version, 'pointerSize:', pointerSize);
-
-      const runtimeSpec = yield agent.getArtRuntimeSpec();
-      const classLinkerOffset = runtimeSpec.offset.classLinker;
-      if (version.startsWith('5.0') && pointerSize === 4) {
-        classLinkerOffset.should.equal(208);
-      } else if (version.startsWith('5.1') && pointerSize === 4) {
-        classLinkerOffset.should.equal(212);
-      } else if (version.startsWith('6.0') && pointerSize === 4) {
-        classLinkerOffset.should.equal(236);
-      } else if (version.startsWith('6.0') && pointerSize === 8) {
-        classLinkerOffset.should.equal(392);
-      } else {
-        throw new Error('Unhandled flavor');
-      }
-
-      const linkerSpec = yield agent.getArtClassLinkerSpec();
-      const trampolineOffset = linkerSpec.offset.quickGenericJniTrampoline;
-      if (version.startsWith('5.0') && pointerSize === 4) {
-        trampolineOffset.should.equal(224);
-      } else if (version.startsWith('5.1') && pointerSize === 4) {
-        trampolineOffset.should.equal(296);
-      } else if (version.startsWith('6.0') && pointerSize === 4) {
-        trampolineOffset.should.equal(296);
-      } else if (version.startsWith('6.0') && pointerSize === 8) {
-        trampolineOffset.should.equal(440);
-      } else {
-        throw new Error('Unhandled flavor');
-      }
-
-      const methodSpec = yield agent.getArtMethodSpec();
-      const methodOffset = methodSpec.offset;
-      if (version.startsWith('5.0') && pointerSize === 4) {
-        methodOffset.interpreterCode.should.equal(24);
-        methodOffset.jniCode.should.equal(32);
-        methodOffset.quickCode.should.equal(40);
-        methodOffset.accessFlags.should.equal(56);
-      } else if (version.startsWith('5.1') && pointerSize === 4) {
-        methodOffset.interpreterCode.should.equal(36);
-        methodOffset.jniCode.should.equal(40);
-        methodOffset.quickCode.should.equal(44);
-        methodOffset.accessFlags.should.equal(20);
-      } else if (version.startsWith('6.0') && pointerSize === 4) {
-        methodOffset.interpreterCode.should.equal(28);
-        methodOffset.jniCode.should.equal(32);
-        methodOffset.quickCode.should.equal(36);
-        methodOffset.accessFlags.should.equal(12);
-      } else if (version.startsWith('6.0') && pointerSize === 8) {
-        methodOffset.interpreterCode.should.equal(32);
-        methodOffset.jniCode.should.equal(40);
-        methodOffset.quickCode.should.equal(48);
-        methodOffset.accessFlags.should.equal(12);
-      } else {
-        throw new Error('Unhandled flavor');
-      }
+      yield operation(agent, id);
 
       yield script.unload();
       yield session.detach();
     }
-  }));
-});
+  });
+}
 
 function getConnectedDevicesIds () {
   return new Promise((resolve, reject) => {
