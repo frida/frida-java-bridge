@@ -35,8 +35,8 @@
   "devDependencies": {
     "bluebird": "^3.4.6",
     "bluebird-co": "^2.2.0",
-    "frida": "^8.1.7",
-    "frida-compile": "^2.0.6",
+    "frida": "^8.2.5",
+    "frida-compile": "^3.1.0",
     "mocha": "^3.1.2",
     "should": "^11.1.1"
   },
