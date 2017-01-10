@@ -97,6 +97,10 @@ function onEachConnectedDevice (operation) {
     const ids = yield getConnectedDevicesIds();
     ids.sort();
 
+    if (ids.length === 0) {
+      throw new Error('No connected devices');
+    }
+
     // 5.0
     // const ids = ['emulator-5554'];
 
