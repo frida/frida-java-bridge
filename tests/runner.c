@@ -3,17 +3,21 @@
 #include <frida-gumjs.h>
 #include <jni.h>
 
-static void frida_java_init_vm (void);
+static void frida_java_init_vm (JavaVM ** vm, JNIEnv ** env);
 static void on_message (GumScript * script, const gchar * message, GBytes * data, gpointer user_data);
 
-static JavaVM * frida_java_vm = NULL;
-static JNIEnv * frida_java_env = NULL;
-
 int
-main (int argc,
-      char * argv[])
+main (int argc, char * argv[])
 {
   GTimer * timer;
+  JavaVM * vm;
+  JNIEnv * env;
+  const struct JNINativeInterface * jni;
+  jclass runner;
+  jmethodID runner_main;
+  jclass string;
+  jobjectArray argv_value;
+  guint arg_index;
   GumScriptBackend * backend;
   GCancellable * cancellable = NULL;
   GError * error = NULL;
@@ -24,9 +28,38 @@ main (int argc,
 
   timer = g_timer_new ();
 
-  frida_java_init_vm ();
+  frida_java_init_vm (&vm, &env);
+  jni = *env;
 
   g_print ("[*] Java VM initialized in %u ms\n", (guint) (g_timer_elapsed (timer, NULL) * 1000.0));
+
+  runner = jni->FindClass (env, "re/frida/TestRunner");
+  g_assert (runner != NULL);
+
+  runner_main = jni->GetStaticMethodID (env, runner, "main", "([Ljava/lang/String;)V");
+  g_assert (runner_main != NULL);
+
+  string = jni->FindClass (env, "java/lang/String");
+  g_assert (string != NULL);
+
+  argv_value = jni->NewObjectArray (env, argc, string, NULL);
+  g_assert (argv_value != NULL);
+
+  for (arg_index = 0; arg_index != argc; arg_index++)
+  {
+    jstring arg_value;
+
+    arg_value = jni->NewStringUTF (env, argv[arg_index]);
+    jni->SetObjectArrayElement (env, argv_value, arg_index, arg_value);
+    jni->DeleteLocalRef (env, arg_value);
+  }
+
+  jni->DeleteLocalRef (env, string);
+
+  jni->CallStaticVoidMethod (env, runner, runner_main, argv_value);
+
+  jni->DeleteLocalRef (env, argv_value);
+  jni->DeleteLocalRef (env, runner);
 
   backend = gum_script_backend_obtain_duk ();
 
@@ -67,7 +100,7 @@ main (int argc,
 }
 
 static void
-frida_java_init_vm (void)
+frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
 {
   void * vm_module, * runtime_module;
   jint (* create_java_vm) (JavaVM ** vm, JNIEnv ** env, void * vm_args);
@@ -99,18 +132,15 @@ frida_java_init_vm (void)
   args.options = options;
   args.ignoreUnrecognized = JNI_TRUE;
 
-  result = create_java_vm (&frida_java_vm, &frida_java_env, &args);
+  result = create_java_vm (vm, env, &args);
   g_assert_cmpint (result, ==, JNI_OK);
 
-  result = register_natives (frida_java_env, NULL);
+  result = register_natives (*env, NULL);
   g_assert_cmpint (result, ==, JNI_OK);
 }
 
 static void
-on_message (GumScript * script,
-            const gchar * message,
-            GBytes * data,
-            gpointer user_data)
+on_message (GumScript * script, const gchar * message, GBytes * data, gpointer user_data)
 {
   JsonParser * parser;
   JsonObject * root;
@@ -137,8 +167,7 @@ on_message (GumScript * script,
 }
 
 void
-ClaimSignalChain (int signal,
-                  struct sigaction * oldaction)
+ClaimSignalChain (int signal, struct sigaction * oldaction)
 {
   /* g_print ("ClaimSignalChain(signal=%d)\n", signal); */
 }
@@ -150,9 +179,7 @@ UnclaimSignalChain (int signal)
 }
 
 void
-InvokeUserSignalHandler (int signal,
-                         siginfo_t * info,
-                         void * context)
+InvokeUserSignalHandler (int signal, siginfo_t * info, void * context)
 {
   /* g_print ("InvokeUserSignalHandler(signal=%d)\n", signal); */
 }
@@ -164,15 +191,13 @@ InitializeSignalChain (void)
 }
 
 void
-EnsureFrontOfChain (int signal,
-                    struct sigaction * expected_action)
+EnsureFrontOfChain (int signal, struct sigaction * expected_action)
 {
   /* g_print ("EnsureFrontOfChain(signal=%d)\n", signal); */
 }
 
 void
-SetSpecialSignalHandlerFn (int signal,
-                           gpointer fn)
+SetSpecialSignalHandlerFn (int signal, gpointer fn)
 {
   /* g_print ("SetSpecialSignalHandlerFn(signal=%d)\n", signal); */
 }
