@@ -16,11 +16,11 @@ build/obj/local/armeabi-v7a/libfrida-gumjs.a:
 build/frida-java-tests.dex: build/frida-java-tests.jar
 	dx --dex --output=$@ $<
 
-build/frida-java-tests.jar: build/java/re/frida/test/Runner.class
-	jar cfe $@ -C build/java re/
+build/frida-java-tests.jar: build/java/re/frida/TestRunner.class
+	jar cfe $@ re.frida.tests.Runner -C build/java .
 
-build/java/re/frida/test/Runner.class: re/frida/test/Runner.java
+build/java/re/frida/TestRunner.class: re/frida/TestRunner.java
 	@mkdir -p build/java/
-	javac -cp . -source 1.7 -target 1.7 re/frida/test/Runner.java -d build/java/
+	javac -cp . -source 1.7 -target 1.7 re/frida/TestRunner.java -d build/java/
 
 .PHONY: all
