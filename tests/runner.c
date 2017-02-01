@@ -72,7 +72,7 @@ frida_java_init_vm (void)
   void * vm_module, * runtime_module;
   jint (* create_java_vm) (JavaVM ** vm, JNIEnv ** env, void * vm_args);
   jint (* register_natives) (JNIEnv * env, jclass clazz);
-  JavaVMOption options[4];
+  JavaVMOption options[5];
   JavaVMInitArgs args;
   jint result;
 
@@ -85,14 +85,14 @@ frida_java_init_vm (void)
   create_java_vm = dlsym (vm_module, "JNI_CreateJavaVM");
   g_assert (create_java_vm != NULL);
 
-  register_natives = dlsym (runtime_module,
-      "Java_com_android_internal_util_WithFramework_registerNatives");
+  register_natives = dlsym (runtime_module, "Java_com_android_internal_util_WithFramework_registerNatives");
   g_assert (register_natives != NULL);
 
   options[0].optionString = "-verbose:jni";
   options[1].optionString = "-verbose:gc";
   options[2].optionString = "-Xcheck:jni";
   options[3].optionString = "-Xdebug";
+  options[4].optionString = "-Djava.class.path=/data/local/tmp/frida-java-tests.dex";
 
   args.version = JNI_VERSION_1_6;
   args.nOptions = G_N_ELEMENTS (options);
