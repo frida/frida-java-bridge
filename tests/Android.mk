@@ -4,6 +4,7 @@ include $(CLEAR_VARS)
 LOCAL_MODULE := frida-java-tests
 LOCAL_SRC_FILES := runner.c dummy.cpp
 LOCAL_STATIC_LIBRARIES := frida-gumjs
+LOCAL_LDFLAGS := -Wl,--version-script,runner.version -Wl,--export-dynamic
 include $(BUILD_EXECUTABLE)
 
 include $(CLEAR_VARS)
