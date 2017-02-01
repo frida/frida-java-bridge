@@ -1,4 +1,4 @@
-frida_version := 9.0.13
+frida_version := 9.1.1
 
 all:
 	@echo "Nothing to build. To run the test-suite: make check"
