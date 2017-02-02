@@ -1,6 +1,9 @@
 ANDROID_SDK_ROOT ?= ~/Library/Android/sdk
 ANDROID_NDK_ROOT ?= /usr/local/opt/android-ndk-r13b
 
+deploy_prefix := /data/local/tmp
+deploy_data_dir := $(deploy_prefix)/frida-java-tests
+
 frida_version := 9.1.1
 
 test_sources := $(wildcard re/frida/*.java)
@@ -12,8 +15,8 @@ all:
 	@echo "Available targets: deploy run"
 
 deploy: build/armeabi-v7a/runner build/tests.dex build/frida-java.js
-	adb shell "rm -rf /data/local/tmp/frida-java-tests/ && mkdir /data/local/tmp/frida-java-tests/"
-	adb push $^ /data/local/tmp/frida-java-tests/
+	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir)"
+	adb push $^ $(deploy_data_dir)
 
 run:
 	adb shell /data/local/tmp/frida-java-tests/runner
@@ -23,7 +26,8 @@ build/armeabi-v7a/runner: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
 		NDK_PROJECT_PATH=$$(pwd) \
 		NDK_APPLICATION_MK=$$(pwd)/Application.mk \
 		NDK_OUT=$$(pwd)/build/obj \
-		NDK_LIBS_OUT=$$(pwd)/build
+		NDK_LIBS_OUT=$$(pwd)/build \
+		FRIDA_JAVA_TESTS_DATA_DIR=$(deploy_data_dir)
 
 build/obj/local/armeabi-v7a/libfrida-gumjs.a:
 	@mkdir -p $(@D)

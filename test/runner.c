@@ -131,7 +131,7 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
   options[1].optionString = "-verbose:gc";
   options[2].optionString = "-Xcheck:jni";
   options[3].optionString = "-Xdebug";
-  options[4].optionString = "-Djava.class.path=/data/local/tmp/frida-java-tests.dex";
+  options[4].optionString = "-Djava.class.path=" FRIDA_JAVA_TESTS_DATA_DIR "/tests.dex";
 
   args.version = JNI_VERSION_1_6;
   args.nOptions = G_N_ELEMENTS (options);
