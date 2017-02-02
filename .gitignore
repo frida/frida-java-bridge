@@ -1,3 +1,4 @@
-/node_modules
-/npm-debug.log
-/test/_agent.js
+/test/.classpath
+/test/.project
+/test/build/
+/test/node_modules/

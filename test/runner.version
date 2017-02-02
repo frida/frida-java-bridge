@@ -1,0 +1,12 @@
+FRIDA_JAVA_TESTS_1.0 {
+  global:
+    ClaimSignalChain;
+    UnclaimSignalChain;
+    InvokeUserSignalHandler;
+    InitializeSignalChain;
+    EnsureFrontOfChain;
+    SetSpecialSignalHandlerFn;
+
+  local:
+    *;
+};
