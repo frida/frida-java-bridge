@@ -9,22 +9,22 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 public class Script implements Closeable {
-	private long handle;
-	private LinkedBlockingQueue<String> pending = new LinkedBlockingQueue<>();
+    private long handle;
+    private LinkedBlockingQueue<String> pending = new LinkedBlockingQueue<>();
 
-	public Script(String sourceCode) {
-	    System.out.println(sourceCode);
-		handle = create(sourceCode);
-	}
+    public Script(String sourceCode) {
+        System.out.println(sourceCode);
+        handle = create(sourceCode);
+    }
 
-	@Override
-	protected void finalize() throws Throwable {
-		try {
-			close();
-		} finally {
-			super.finalize();
-		}
-	}
+    @Override
+    protected void finalize() throws Throwable {
+        try {
+            close();
+        } finally {
+            super.finalize();
+        }
+    }
 
     @Override
     public void close() throws IOException {
@@ -34,31 +34,31 @@ public class Script implements Closeable {
         }
     }
 
-	public String getNextMessage() {
-		try {
-			return pending.poll(5, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
-			return getNextMessage();
-		}
-	}
+    public String getNextMessage() {
+        try {
+            return pending.poll(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            return getNextMessage();
+        }
+    }
 
-	private void onMessage(String rawMessage) {
-		try {
-			JSONObject message = new JSONObject(rawMessage);
+    private void onMessage(String rawMessage) {
+        try {
+            JSONObject message = new JSONObject(rawMessage);
 
-			String type = message.getString("type");
-			if (type.equals("send")) {
-				pending.add(message.getString("payload"));
-			} else if (type.equals("log")) {
-				System.out.println(message.getString("payload"));
-			} else {
-				System.err.println(rawMessage);
-			}
-		} catch (JSONException e) {
-			e.printStackTrace();
-		}
-	}
+            String type = message.getString("type");
+            if (type.equals("send")) {
+                pending.add(message.getString("payload"));
+            } else if (type.equals("log")) {
+                System.out.println(message.getString("payload"));
+            } else {
+                System.err.println(rawMessage);
+            }
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
-	private native long create(String sourceCode);
-	private native void destroy(long handle);
+    private native long create(String sourceCode);
+    private native void destroy(long handle);
 }

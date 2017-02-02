@@ -11,28 +11,28 @@ import org.junit.rules.ExpectedException;
 import java.io.IOException;
 
 public class HookTest {
-	private Script script = null;
+    private Script script = null;
 
-	private Script createScript(String code) {
+    private Script createScript(String code) {
         Script script = new Script(TestRunner.fridaJavaBundle + ";\n(function (Java) {" + code + "})(LocalJava);");
         this.script = script;
         return script;
     }
 
-	@After
-	public void tearDown() throws IOException {
-	    if (script != null) {
+    @After
+    public void tearDown() throws IOException {
+        if (script != null) {
             script.close();
             script = null;
-	    }
-	}
+        }
+    }
 
-	@Rule
+    @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-	@Test
-	public void propagatesExceptions() {
-		Script script = createScript("" +
+    @Test
+    public void propagatesExceptions() {
+        Script script = createScript("" +
                 "Java.perform(function () {" +
                     "var Badger = Java.use('re.frida.HookTest$Badger');" +
                     "Badger.die.implementation = function () {" +
@@ -40,16 +40,16 @@ public class HookTest {
                     "};" +
                 "});");
 
-		Badger badger = new Badger();
+        Badger badger = new Badger();
 
-		thrown.expect(IllegalStateException.class);
-		thrown.expectMessage("Already dead");
-		badger.die();
-	}
+        thrown.expect(IllegalStateException.class);
+        thrown.expectMessage("Already dead");
+        badger.die();
+    }
 
-	private class Badger {
-	    public void die() {
-	        throw new IllegalStateException("Already dead");
+    private class Badger {
+        public void die() {
+            throw new IllegalStateException("Already dead");
         }
     }
 }
