@@ -50,6 +50,7 @@ main (int argc, char * argv[])
   jmethodID runner_main;
   jclass string;
   jobjectArray argv_value;
+  jstring data_dir_value;
   guint arg_index;
   GumScriptBackend * backend;
   GCancellable * cancellable = NULL;
@@ -67,10 +68,12 @@ main (int argc, char * argv[])
 
   frida_java_register_script_api (env);
 
+  (*env)->PushLocalFrame (env, 6);
+
   runner = (*env)->FindClass (env, "re/frida/TestRunner");
   g_assert (runner != NULL);
 
-  runner_main = (*env)->GetStaticMethodID (env, runner, "main", "([Ljava/lang/String;)V");
+  runner_main = (*env)->GetStaticMethodID (env, runner, "main", "([Ljava/lang/String;Ljava/lang/String;)V");
   g_assert (runner_main != NULL);
 
   string = (*env)->FindClass (env, "java/lang/String");
@@ -88,9 +91,9 @@ main (int argc, char * argv[])
     (*env)->DeleteLocalRef (env, arg_value);
   }
 
-  (*env)->DeleteLocalRef (env, string);
+  data_dir_value = (*env)->NewStringUTF (env, FRIDA_JAVA_TESTS_DATA_DIR);
 
-  (*env)->CallStaticVoidMethod (env, runner, runner_main, argv_value);
+  (*env)->CallStaticVoidMethod (env, runner, runner_main, argv_value, data_dir_value);
   if ((*env)->ExceptionCheck (env))
   {
     (*env)->ExceptionDescribe (env);
@@ -99,8 +102,7 @@ main (int argc, char * argv[])
     result = 1;
   }
 
-  (*env)->DeleteLocalRef (env, argv_value);
-  (*env)->DeleteLocalRef (env, runner);
+  (*env)->PopLocalFrame (env, NULL);
 
   return result;
 }
@@ -159,6 +161,8 @@ frida_java_register_script_api (JNIEnv * env)
 
   re_frida_script_on_message_method = (*env)->GetMethodID (env, script, "onMessage", "(Ljava/lang/String;)V");
   g_assert (re_frida_script_on_message_method != NULL);
+
+  (*env)->DeleteLocalRef (env, script);
 }
 
 static jlong

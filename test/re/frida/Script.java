@@ -1,27 +1,38 @@
 package re.frida;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class Script {
+public class Script implements Closeable {
 	private long handle;
 	private LinkedBlockingQueue<String> pending = new LinkedBlockingQueue<>();
 
 	public Script(String sourceCode) {
+	    System.out.println(sourceCode);
 		handle = create(sourceCode);
 	}
 
 	@Override
 	protected void finalize() throws Throwable {
 		try {
-			destroy(handle);
+			close();
 		} finally {
 			super.finalize();
 		}
 	}
+
+    @Override
+    public void close() throws IOException {
+        if (handle != 0) {
+            destroy(handle);
+            handle = 0;
+        }
+    }
 
 	public String getNextMessage() {
 		try {
