@@ -12,25 +12,6 @@ import java.io.IOException;
 public class HookTest {
     private Script script = null;
 
-    private Script loadScript(String code) {
-        Script script = new Script(TestRunner.fridaJavaBundle +
-                ";\n(function (Java) {" +
-                    "Java.perform(function () {" +
-                        code +
-                    "});" +
-                "})(LocalJava);");
-        this.script = script;
-        return script;
-    }
-
-    @After
-    public void tearDown() throws IOException {
-        if (script != null) {
-            script.close();
-            script = null;
-        }
-    }
-
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
@@ -51,6 +32,25 @@ public class HookTest {
     private class Badger {
         public void die() {
             throw new IllegalStateException("Already dead");
+        }
+    }
+
+    private Script loadScript(String code) {
+        Script script = new Script(TestRunner.fridaJavaBundle +
+                ";\n(function (Java) {" +
+                "Java.perform(function () {" +
+                code +
+                "});" +
+                "})(LocalJava);");
+        this.script = script;
+        return script;
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        if (script != null) {
+            script.close();
+            script = null;
         }
     }
 }
