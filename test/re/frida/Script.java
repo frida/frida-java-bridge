@@ -13,7 +13,6 @@ public class Script implements Closeable {
     private LinkedBlockingQueue<String> pending = new LinkedBlockingQueue<>();
 
     public Script(String sourceCode) {
-        System.out.println(sourceCode);
         handle = create(sourceCode);
     }
 

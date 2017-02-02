@@ -3,7 +3,6 @@ package re.frida;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -13,8 +12,13 @@ import java.io.IOException;
 public class HookTest {
     private Script script = null;
 
-    private Script createScript(String code) {
-        Script script = new Script(TestRunner.fridaJavaBundle + ";\n(function (Java) {" + code + "})(LocalJava);");
+    private Script loadScript(String code) {
+        Script script = new Script(TestRunner.fridaJavaBundle +
+                ";\n(function (Java) {" +
+                    "Java.perform(function () {" +
+                        code +
+                    "});" +
+                "})(LocalJava);");
         this.script = script;
         return script;
     }
@@ -32,13 +36,10 @@ public class HookTest {
 
     @Test
     public void propagatesExceptions() {
-        Script script = createScript("" +
-                "Java.perform(function () {" +
-                    "var Badger = Java.use('re.frida.HookTest$Badger');" +
-                    "Badger.die.implementation = function () {" +
-                        "this.die();" +
-                    "};" +
-                "});");
+        loadScript("var Badger = Java.use('re.frida.HookTest$Badger');" +
+                "Badger.die.implementation = function () {" +
+                    "this.die();" +
+                "};");
 
         Badger badger = new Badger();
 
