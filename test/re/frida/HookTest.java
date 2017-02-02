@@ -10,8 +10,6 @@ import org.junit.rules.ExpectedException;
 import java.io.IOException;
 
 public class HookTest {
-    private Script script = null;
-
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
@@ -34,6 +32,8 @@ public class HookTest {
             throw new IllegalStateException("Already dead");
         }
     }
+
+    private Script script = null;
 
     private Script loadScript(String code) {
         Script script = new Script(TestRunner.fridaJavaBundle +
