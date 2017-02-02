@@ -3,6 +3,9 @@ package re.frida;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 public class Script {
 	private long handle;
 	private LinkedBlockingQueue<String> pending = new LinkedBlockingQueue<>();
@@ -28,8 +31,21 @@ public class Script {
 		}
 	}
 
-	private void onMessage(String message) {
-		pending.add(message);
+	private void onMessage(String rawMessage) {
+		try {
+			JSONObject message = new JSONObject(rawMessage);
+
+			String type = message.getString("type");
+			if (type.equals("send")) {
+				pending.add(message.getString("payload"));
+			} else if (type.equals("log")) {
+				System.out.println(message.getString("payload"));
+			} else {
+				System.err.println(rawMessage);
+			}
+		} catch (JSONException e) {
+			e.printStackTrace();
+		}
 	}
 
 	private native long create(String sourceCode);

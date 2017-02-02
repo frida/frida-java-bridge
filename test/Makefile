@@ -1,12 +1,17 @@
+ANDROID_SDK_ROOT ?= ~/Library/Android/sdk
+ANDROID_NDK_ROOT ?= /usr/local/opt/android-ndk-r13b
+
 frida_version := 9.1.1
 
 test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
 
+android_jar := $(shell echo $(ANDROID_SDK_ROOT))/platforms/android-23/android.jar
+
 all: build/armeabi-v7a/frida-java-tests build/frida-java-tests.dex
 
 build/armeabi-v7a/frida-java-tests: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
-	$$ANDROID_NDK_ROOT/ndk-build \
+	$(ANDROID_NDK_ROOT)/ndk-build \
 		NDK_PROJECT_PATH=$$(pwd) \
 		NDK_APPLICATION_MK=$$(pwd)/Application.mk \
 		NDK_OUT=$$(pwd)/build/obj \
@@ -26,8 +31,8 @@ build/frida-java-tests.jar: $(test_sources) build/junit.jar build/hamcrest.jar
 		&& jar xf ../junit.jar \
 		&& jar xf ../hamcrest.jar
 	javac \
-		-cp .:build/java/ \
-		-bootclasspath /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/jre/lib/rt.jar \
+		-cp .:build/java/:$(android_jar) \
+		-bootclasspath $(android_jar) \
 		-source 1.7 \
 		-target 1.7 \
 		$(test_sources) \
