@@ -8,9 +8,17 @@ test_classes := $(patsubst %.java,%.class,$(test_sources))
 
 android_jar := $(shell echo $(ANDROID_SDK_ROOT))/platforms/android-23/android.jar
 
-all: build/armeabi-v7a/frida-java-tests build/frida-java-tests.dex
+all:
+	@echo "Available targets: deploy run"
 
-build/armeabi-v7a/frida-java-tests: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
+deploy: build/armeabi-v7a/runner build/tests.dex build/frida-java.js
+	adb shell "rm -rf /data/local/tmp/frida-java-tests/ && mkdir /data/local/tmp/frida-java-tests/"
+	adb push $^ /data/local/tmp/frida-java-tests/
+
+run:
+	adb shell /data/local/tmp/frida-java-tests/runner
+
+build/armeabi-v7a/runner: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
 	$(ANDROID_NDK_ROOT)/ndk-build \
 		NDK_PROJECT_PATH=$$(pwd) \
 		NDK_APPLICATION_MK=$$(pwd)/Application.mk \
@@ -21,10 +29,10 @@ build/obj/local/armeabi-v7a/libfrida-gumjs.a:
 	@mkdir -p $(@D)
 	curl -Ls https://github.com/frida/frida/releases/download/$(frida_version)/frida-gumjs-devkit-$(frida_version)-android-arm.tar.xz | tar -xJf - -C $(@D)
 
-build/frida-java-tests.dex: build/frida-java-tests.jar
+build/tests.dex: build/tests.jar
 	dx --dex --output=$@ $<
 
-build/frida-java-tests.jar: $(test_sources) build/junit.jar build/hamcrest.jar
+build/tests.jar: $(test_sources) build/junit.jar build/hamcrest.jar
 	@rm -rf build/java/
 	@mkdir -p build/java/
 	cd build/java/ \
@@ -47,4 +55,10 @@ build/hamcrest.jar:
 	@mkdir -p $(@D)
 	curl -Ls https://search.maven.org/remotecontent?filepath=org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar > $@
 
-.PHONY: all
+build/frida-java.js: node_modules
+	npm run build
+
+node_modules: package.json
+	npm install
+
+.PHONY: all deploy
