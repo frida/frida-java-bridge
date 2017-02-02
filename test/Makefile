@@ -1,6 +1,6 @@
 frida_version := 9.1.1
 
-test_sources := $(wildcard re/frida/*Test.java)
+test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
 
 all: build/armeabi-v7a/frida-java-tests build/frida-java-tests.dex
@@ -19,7 +19,7 @@ build/obj/local/armeabi-v7a/libfrida-gumjs.a:
 build/frida-java-tests.dex: build/frida-java-tests.jar
 	dx --dex --output=$@ $<
 
-build/frida-java-tests.jar: re/frida/TestRunner.java $(test_sources) build/junit.jar build/hamcrest.jar
+build/frida-java-tests.jar: $(test_sources) build/junit.jar build/hamcrest.jar
 	@rm -rf build/java/
 	@mkdir -p build/java/
 	cd build/java/ \
@@ -30,7 +30,6 @@ build/frida-java-tests.jar: re/frida/TestRunner.java $(test_sources) build/junit
 		-bootclasspath /Library/Java/JavaVirtualMachines/jdk1.8.0_31.jdk/Contents/Home/jre/lib/rt.jar \
 		-source 1.7 \
 		-target 1.7 \
-		re/frida/TestRunner.java \
 		$(test_sources) \
 		-d build/java/
 	jar cfe $@ re.frida.tests.Runner -C build/java .
