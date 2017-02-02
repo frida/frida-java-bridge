@@ -9,6 +9,7 @@ static void on_message (GumScript * script, const gchar * message, GBytes * data
 int
 main (int argc, char * argv[])
 {
+  gint result = 0;
   GTimer * timer;
   JavaVM * vm;
   JNIEnv * env;
@@ -57,6 +58,13 @@ main (int argc, char * argv[])
   jni->DeleteLocalRef (env, string);
 
   jni->CallStaticVoidMethod (env, runner, runner_main, argv_value);
+  if (jni->ExceptionCheck (env))
+  {
+    jni->ExceptionDescribe (env);
+    jni->ExceptionClear (env);
+
+    result = 1;
+  }
 
   jni->DeleteLocalRef (env, argv_value);
   jni->DeleteLocalRef (env, runner);
@@ -96,7 +104,7 @@ main (int argc, char * argv[])
 
   gum_deinit_embedded ();
 
-  return 0;
+  return result;
 }
 
 static void
