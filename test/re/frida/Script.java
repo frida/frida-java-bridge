@@ -50,6 +50,8 @@ public class Script implements Closeable {
                 pending.add(message.getString("payload"));
             } else if (type.equals("log")) {
                 System.out.println(message.getString("payload"));
+            } else if (type.equals("error")) {
+                System.err.println(message.getString("stack"));
             } else {
                 System.err.println(rawMessage);
             }
