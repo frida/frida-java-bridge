@@ -19,12 +19,18 @@ $ export ANDROID_NDK_ROOT=/usr/local/opt/android-ndk-r13b
 
 ### Run
 
+```sh
 $ make check
+```
 
 ### Debug
 
+```sh
 $ make check-gdb
+```
 
 ### Auto-run tests on JavaScript change
 
+```sh
 $ make develop
+```
