@@ -151,16 +151,22 @@ public class MethodTest {
                 // it should be an int
                 "    var cipherMode = field.getInt(cipher);" +
                 "    var ENCRYPT_MODE = theClass.ENCRYPT_MODE;" +
+                
+                // we set the mode to Cipher.ENCRYPT_MODE
+                // somehow Cipher.ENCRYPT_MODE is coming back as an object rather than an int
                 "    if( cipherMode !== ENCRYPT_MODE ){" +
                 "      MethodTest.Fail('TestFields: cipherMode !== ENCRYPT_MODE');" +
                 "    }" +
                 "  };" +
                 "  " +
                 "}catch(e){" + 
+                
+                // shouldnt reach here
                 "  MethodTest.Fail('TestFields shat the bed: ' + e);" +
                 "}"
                 );
-                                
+        
+        // cipher boilerplate
         byte[] ivBytes = "1234567812345678".getBytes();
         byte[] key = "keykeykeykeykey!".getBytes();
         try{
@@ -170,6 +176,7 @@ public class MethodTest {
           DoAThingWithACypherMode(cipher);
         }
         catch(Exception e){
+        // this try/catch should never get triggered.  just put it here so the compiler would shut up
           assertNull("this shouldnt happen:" + e);
         }
         
