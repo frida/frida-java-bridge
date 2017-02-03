@@ -47,7 +47,7 @@ public class MethodTest {
       failString = msg;
     }
     
-    @Test
+    //@Test
     /*public void TestNewInterface() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
                 "try{" +
@@ -62,13 +62,15 @@ public class MethodTest {
     
      @Test
     public void TestClassForName() {
-        loadScript("var class = Java.use('java.lang.Class');" +
+        loadScript("var c = Java.use('java.lang.Class');" +
                 "try{" +
-                "  var orig = class.overload('java.lang.String')" +
-                "  class.overload('java.lang.String').implementation = function(s){ orig(s); }" +
+                "  var orig = c.forName.overload('java.lang.String');" +
+                "  c.forName.overload('java.lang.String').implementation = function(s){ orig(s); };" +
+                "  var d = c.forName('re.frida.MethodTest');" +
+                "  " +
                 "}catch(e){" + 
                 "  var MethodTest = Java.use('re.frida.MethodTest');" +
-                "  MethodTest.Fail('couldnt create trustmanager: ' + e);" +
+                "  MethodTest.Fail('class.forName shat the bed: ' + e);" +
                 "}"
                 );
         assertNull(failString);
