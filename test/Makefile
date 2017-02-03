@@ -16,7 +16,7 @@ all:
 
 deploy: build/armeabi-v7a/runner build/tests.dex build/frida-java.js
 	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir)"
-	$(foreach foo, $(^), adb push $(foo) $(deploy_data_dir);)
+	adb push $^ $(deploy_data_dir)
 
 run:
 	adb shell /data/local/tmp/frida-java-tests/runner
