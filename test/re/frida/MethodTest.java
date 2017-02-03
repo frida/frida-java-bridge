@@ -14,7 +14,7 @@ public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    /*@Test
+    @Test
     public void callPropagatesExceptions() {
         Script script = loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -39,7 +39,7 @@ public class MethodTest {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already dead");
         badger.die();
-    }*/
+    }
     
     static private String failString = null;
     static private void Fail( String msg )
@@ -48,7 +48,7 @@ public class MethodTest {
     }
     
     //@Test
-    /*public void TestNewInterface() {
+    public void TestNewInterface() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
                 "try{" +
                 "  var tm = X509TrustManager.$new();" +
@@ -58,9 +58,9 @@ public class MethodTest {
                 "}"
                 );
         assertNull(failString);
-    }*/
+    }
     
-    /*@Test
+    @Test
     public void TestClassForName() {
         loadScript("var c = Java.use('java.lang.Class');" +
                 "try{" +
@@ -73,7 +73,7 @@ public class MethodTest {
                 "}"
                 );
         assertNull(failString);
-    }*/
+    }
     
     /*public int ReturnZero()
     {
