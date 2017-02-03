@@ -75,7 +75,7 @@ public class MethodTest {
         assertNull(failString);
     }*/
     
-    public int ReturnZero()
+    /*public int ReturnZero()
     {
       return 0;
     }
@@ -99,6 +99,36 @@ public class MethodTest {
                 "}catch(e){" + 
                 "  var MethodTest = Java.use('re.frida.MethodTest');" +
                 "  MethodTest.Fail('Method.invoke shat the bed: ' + e);" +
+                "}"
+                );
+        assertNull(failString);
+    }*/
+    
+    @Test
+    public void TestNativeLibraryLoading() {
+        loadScript("var c = Java.use('java.lang.System');" +
+                "try{" +
+                "  var orig = c.load;" +
+                "  c.load.implementation = function(s){ orig(s); };" +
+                "  c.load('/system/lib/libc.so')" +
+                "}catch(e){" + 
+                "  var MethodTest = Java.use('re.frida.MethodTest');" +
+                "  MethodTest.Fail('System.load() shat the bed: ' + e);" +
+                "}"
+                );
+        assertNull(failString);
+        
+        loadScript("var c = Java.use('java.lang.Runtime');" +
+                "try{" +
+                "  var orig = c.loadLibrary.overload('java.lang.String');" +
+                "  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig(s); };" +
+                
+                // now look up the function again and call it
+                "  var now = c.loadLibrary.overload('java.lang.String');" +
+                "  now('/system/lib/libc.so')" +
+                "}catch(e){" + 
+                "  var MethodTest = Java.use('re.frida.MethodTest');" +
+                "  MethodTest.Fail('Runtime.loadLibrary() shat the bed: ' + e);" +
                 "}"
                 );
         assertNull(failString);
