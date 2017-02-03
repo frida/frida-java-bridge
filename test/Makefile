@@ -19,14 +19,14 @@ deploy: build/armeabi-v7a/runner build/tests.dex build/frida-java.js
 	adb push $^ $(deploy_data_dir)
 
 run:
-	adb shell /data/local/tmp/frida-java-tests/runner
+	adb shell $(deploy_data_dir)/runner
 
 watch:
 	npm run watch &
 	./node_modules/.bin/chokidar \
 		build/frida-java.js \
 		-c "adb push build/frida-java.js $(deploy_data_dir) \
-			&& adb shell /data/local/tmp/frida-java-tests/runner"
+			&& adb shell $(deploy_data_dir)/runner"
 
 build/armeabi-v7a/runner: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
 	$(ANDROID_NDK_ROOT)/ndk-build \
