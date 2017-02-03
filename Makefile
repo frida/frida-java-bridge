@@ -5,6 +5,10 @@ check: node_modules
 	make -C test deploy
 	make -C test run
 
+develop: node_modules
+	make -C test deploy
+	make -C test watch
+
 node_modules: package.json
 	npm install
 
