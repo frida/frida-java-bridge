@@ -47,7 +47,7 @@ public class MethodTest {
       failString = msg;
     }
     
-    //@Test
+    @Test
     public void TestNewInterface() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
                 "try{" +
