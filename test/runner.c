@@ -76,7 +76,7 @@ main (int argc, char * argv[])
 
   gum_init_embedded ();
 
-  js_backend = gum_script_backend_obtain_duk ();
+  js_backend = gum_script_backend_obtain_v8 ();
   js_context = gum_script_backend_get_main_context (backend);
 
   frida_java_init_vm (&vm, &env);
