@@ -9,14 +9,14 @@ frida_version := 9.1.1
 test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
 
-android_jar := $(shell echo $(ANDROID_SDK_ROOT))/platforms/android-23/android.jar
+android_jar := $(ANDROID_SDK_ROOT)/platforms/android-23/android.jar
 
 all:
 	@echo "Available targets: deploy run"
 
 deploy: build/armeabi-v7a/runner build/tests.dex build/frida-java.js
 	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir)"
-	adb push $^ $(deploy_data_dir)
+	$(foreach foo, $(^), adb push $(foo) $(deploy_data_dir))
 
 run:
 	adb shell /data/local/tmp/frida-java-tests/runner
