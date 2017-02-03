@@ -14,8 +14,21 @@ public class HookTest {
     public final ExpectedException thrown = ExpectedException.none();
 
     @Test
-    public void propagatesExceptions() {
-        loadScript("var Badger = Java.use('re.frida.HookTest$Badger');" +
+    public void callPropagatesExceptions() {
+        Script script = loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "var badger = Badger.$new();" +
+                "try {" +
+                    "badger.die();" +
+                    "send('should not get here');" +
+                "} catch (e) {" +
+                    "send(e.message);" +
+                "}");
+        assertEquals("java.lang.IllegalStateException: Already dead", script.getNextMessage());
+    }
+
+    @Test
+    public void replacementPropagatesExceptions() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "Badger.die.implementation = function () {" +
                     "this.die();" +
                 "};");
@@ -25,12 +38,6 @@ public class HookTest {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already dead");
         badger.die();
-    }
-
-    private class Badger {
-        public void die() {
-            throw new IllegalStateException("Already dead");
-        }
     }
 
     private Script script = null;
@@ -52,5 +59,11 @@ public class HookTest {
             script.close();
             script = null;
         }
+    }
+}
+
+class Badger {
+    public void die() {
+        throw new IllegalStateException("Already dead");
     }
 }
