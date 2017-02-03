@@ -60,17 +60,45 @@ public class MethodTest {
         assertNull(failString);
     }*/
     
-     @Test
+    /*@Test
     public void TestClassForName() {
         loadScript("var c = Java.use('java.lang.Class');" +
                 "try{" +
                 "  var orig = c.forName.overload('java.lang.String');" +
                 "  c.forName.overload('java.lang.String').implementation = function(s){ orig(s); };" +
                 "  var d = c.forName('re.frida.MethodTest');" +
-                "  " +
                 "}catch(e){" + 
                 "  var MethodTest = Java.use('re.frida.MethodTest');" +
                 "  MethodTest.Fail('class.forName shat the bed: ' + e);" +
+                "}"
+                );
+        assertNull(failString);
+    }*/
+    
+    public int ReturnZero()
+    {
+      return 0;
+    }
+    
+    // this one was just hanging indefinitely during the test, but in an actual app, it was crashing
+    //! either one of those is bad.
+    @Test
+    public void TestMethodInvoke() {
+        loadScript("var c = Java.use('java.lang.reflect.Method');" +
+                "var c2 = Java.use('java.lang.Class');" +
+                "try{" +
+                
+                // hook the original
+                "  var orig = c.invoke;" +
+                "  c.invoke.implementation = function(obj, ...args){ orig(obj, args); };" +
+                
+                // now call it and see what happens
+                "  var cl = c.forName('re.frida.MethodTest');" +
+                "  var method = cl.getMethod('ReturnZero', 'int');" +
+                "  var ret = method.invoke();" +
+                "}catch(e){" + 
+                "  var MethodTest = Java.use('re.frida.MethodTest');" +
+                "  MethodTest.Fail('Method.invoke shat the bed: ' + e);" +
                 "}"
                 );
         assertNull(failString);
