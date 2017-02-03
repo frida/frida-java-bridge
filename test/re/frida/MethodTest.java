@@ -48,10 +48,24 @@ public class MethodTest {
     }
     
     @Test
-    public void TestNewInterface() {
+    /*public void TestNewInterface() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
                 "try{" +
                 "  var tm = X509TrustManager.$new();" +
+                "}catch(e){" + 
+                "  var MethodTest = Java.use('re.frida.MethodTest');" +
+                "  MethodTest.Fail('couldnt create trustmanager: ' + e);" +
+                "}"
+                );
+        assertNull(failString);
+    }*/
+    
+     @Test
+    public void TestClassForName() {
+        loadScript("var class = Java.use('java.lang.Class');" +
+                "try{" +
+                "  var orig = class.overload('java.lang.String')" +
+                "  class.overload('java.lang.String').implementation = function(s){ orig(s); }" +
                 "}catch(e){" + 
                 "  var MethodTest = Java.use('re.frida.MethodTest');" +
                 "  MethodTest.Fail('couldnt create trustmanager: ' + e);" +
