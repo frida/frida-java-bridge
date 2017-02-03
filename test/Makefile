@@ -20,7 +20,7 @@ frida_version := 9.1.1
 test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
 
-android_jar := $(ANDROID_SDK_ROOT)/platforms/$(android_platform)/android.jar
+android_jar := $(abspath $(ANDROID_SDK_ROOT))/platforms/$(android_platform)/android.jar
 
 all:
 	@echo "Available targets: deploy run"
