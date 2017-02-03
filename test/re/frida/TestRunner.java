@@ -16,7 +16,7 @@ public class TestRunner {
 
         TestRunner.fridaJavaBundle = slurp("frida-java.js");
 
-        JUnitCore.main("re.frida.HookTest");
+        JUnitCore.main("re.frida.MethodTest");
     }
 
     public static String slurp(String name) {

@@ -9,7 +9,7 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 
-public class HookTest {
+public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
