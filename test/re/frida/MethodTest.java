@@ -9,12 +9,15 @@ import static org.junit.Assert.assertNull;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
+import javax.crypto.Cipher;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
 
 public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    @Test
+    /*@Test
     public void callPropagatesExceptions() {
         Script script = loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -39,12 +42,6 @@ public class MethodTest {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already dead");
         badger.die();
-    }
-    
-    static private String failString = null;
-    static private void Fail( String msg )
-    {
-      failString = msg;
     }
     
     @Test
@@ -73,7 +70,7 @@ public class MethodTest {
                 "}"
                 );
         assertNull(failString);
-    }
+    }*/
     
     /*public int ReturnZero()
     {
@@ -104,7 +101,7 @@ public class MethodTest {
         assertNull(failString);
     }*/
     
-    @Test
+    /*@Test
     public void TestNativeLibraryLoading() {
         loadScript("var c = Java.use('java.lang.System');" +
                 "try{" +
@@ -132,6 +129,98 @@ public class MethodTest {
                 "}"
                 );
         assertNull(failString);
+    }*/
+    
+    private void DoAThingWithACypherMode( Cipher cipher )
+    {
+    }
+    
+    @Test
+    public void TestFields() {
+        /*loadScript("var c = Java.use('javax.crypto.Cipher');" +
+                "var MethodTest = Java.use('re.frida.MethodTest');  " + 
+                "try{" +
+                "  MethodTest.DoAThingWithACypherMode.implementation = function(cipher){" +
+                
+                // make sure the mode is accessible to avoid a crash
+                "    var theClass = c.class;" +
+                "    var field = theClass.getDeclaredField('mode');" +
+                "    field.setAccessible(true);" +
+                
+                // we've been passed a Cipher.  check and see which mode it is
+                // it should be an int
+                "    var cipherMode = field.getInt(this);" +
+                "    var ENCRYPT_MODE = theClass.ENCRYPT_MODE;" +
+                "    if( cipherMode !== ENCRYPT_MODE ){" +
+                "      MethodTest.Fail('TestFields: cipherMode !== ENCRYPT_MODE');" +
+                "    }" +
+                "  };" +
+                "  " +
+                "}catch(e){" + 
+                "  MethodTest.Fail('TestFields shat the bed: ' + e);" +
+                "}"
+                );*/
+                                
+        byte[] ivBytes = "1234567812345678".getBytes();
+        byte[] key = "keykeykeykeykey!".getBytes();
+        try{
+          SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");        
+          Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+          cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, new IvParameterSpec(ivBytes)); 
+          DoAThingWithACypherMode(cipher);
+        }
+        catch(Exception e){
+          assertNull("this shouldnt happen:" + e);
+        }
+        
+        assertNull(failString);
+    }
+    
+    @Test
+    public void TestCipher() {
+        loadScript("var c = Java.use('javax.crypto.Cipher');" +
+                "var MethodTest = Java.use('re.frida.MethodTest');  " + 
+                "try{" +
+                "  MethodTest.DoAThingWithACypherMode.implementation = function(cipher){" +
+                
+                // make sure the mode is accessible to avoid a crash
+                "    var theClass = c.class;" +
+                "    var field = theClass.getDeclaredField('mode');" +
+                "    field.setAccessible(true);" +
+                
+                // we've been passed a Cipher.  check and see which mode it is
+                // it should be an int
+                "    var cipherMode = field.getInt(this);" +
+                "    var ENCRYPT_MODE = theClass.ENCRYPT_MODE;" +
+                "    if( cipherMode !== ENCRYPT_MODE ){" +
+                "      MethodTest.Fail('TestFields: cipherMode !== ENCRYPT_MODE');" +
+                "    }" +
+                "  };" +
+                "  " +
+                "}catch(e){" + 
+                "  MethodTest.Fail('TestFields shat the bed: ' + e);" +
+                "}"
+                );
+                                
+        byte[] ivBytes = "1234567812345678".getBytes();
+        byte[] key = "keykeykeykeykey!".getBytes();
+        try{
+          SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");        
+          Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
+          cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, new IvParameterSpec(ivBytes)); 
+          DoAThingWithACypherMode(cipher);
+        }
+        catch(Exception e){
+          assertNull("this shouldnt happen:" + e);
+        }
+        
+        assertNull(failString);
+    }
+    
+    static private String failString = null;
+    static private void Fail( String msg )
+    {
+      failString = msg;
     }
 
     private Script script = null;
