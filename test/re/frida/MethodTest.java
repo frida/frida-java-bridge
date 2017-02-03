@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
+import static org.junit.Assert.assertNull;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
@@ -13,7 +14,7 @@ public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    @Test
+    /*@Test
     public void callPropagatesExceptions() {
         Script script = loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -38,6 +39,25 @@ public class MethodTest {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already dead");
         badger.die();
+    }*/
+    
+    static private String failString = null;
+    static private void Fail( String msg )
+    {
+      failString = msg;
+    }
+    
+    @Test
+    public void TestNewInterface() {
+        loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
+                "try{" +
+                "  var tm = X509TrustManager.$new();" +
+                "}catch(e){" + 
+                "  var MethodTest = Java.use('re.frida.MethodTest');" +
+                "  MethodTest.Fail('couldnt create trustmanager: ' + e);" +
+                "}"
+                );
+        assertNull(failString);
     }
 
     private Script script = null;
