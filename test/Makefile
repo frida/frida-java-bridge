@@ -1,5 +1,16 @@
 ANDROID_SDK_ROOT ?= ~/Library/Android/sdk
 ANDROID_NDK_ROOT ?= /usr/local/opt/android-ndk-r13b
+DEBUG_PORT ?= 5042
+
+build_os_arch := $(shell uname -s | tr -s "[A-Z]" "[a-z]")-$(shell uname -m)
+
+android_platform := android-23
+android_arch := arm
+android_abi := armeabi-v7a
+android_toolchain := arm-linux-androideabi-4.9
+android_toolprefix = arm-linux-androideabi
+android_sysroot := $(ANDROID_NDK_ROOT)/platforms/$(android_platform)/arch-$(android_arch)
+android_libdir := /system/lib
 
 deploy_prefix := /data/local/tmp
 deploy_data_dir := $(deploy_prefix)/frida-java-tests
@@ -9,10 +20,13 @@ frida_version := 9.1.1
 test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
 
-android_jar := $(shell echo $(ANDROID_SDK_ROOT))/platforms/android-23/android.jar
+android_jar := $(ANDROID_SDK_ROOT)/platforms/$(android_platform)/android.jar
 
 all:
 	@echo "Available targets: deploy run"
+
+clean:
+	rm -rf build
 
 deploy: build/armeabi-v7a/runner build/tests.dex build/frida-java.js
 	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir)"
@@ -27,6 +41,32 @@ watch:
 		build/frida-java.js \
 		-c "adb push build/frida-java.js $(deploy_data_dir) \
 			&& adb shell $(deploy_data_dir)/runner"
+
+debug: build/gdb.setup
+	adb shell "rm -f $(deploy_data_dir)/debug-socket"
+	adb push $(ANDROID_NDK_ROOT)/prebuilt/android-$(android_arch)/gdbserver/gdbserver $(deploy_data_dir)
+	adb shell "$(deploy_data_dir)/gdbserver +$(deploy_data_dir)/debug-socket $(deploy_data_dir)/runner" &
+	sleep 1
+	adb forward tcp:$(DEBUG_PORT) localfilesystem:$(deploy_data_dir)/debug-socket
+	$(ANDROID_NDK_ROOT)/prebuilt/$(build_os_arch)/bin/gdb -x build/gdb.setup
+
+build/gdb.setup: build/symbols.stamp
+	( \
+		echo "set solib-search-path $(abspath build/symbols/$(android_libdir))"; \
+		echo "directory $(android_sysroot)/usr/include"; \
+		echo "directory $(abspath .)"; \
+		echo "file $(abspath build/obj/local/$(android_abi)/runner)"; \
+		echo "target remote :$(DEBUG_PORT)"; \
+	) > $@
+
+build/symbols.stamp:
+	rm -rf build/symbols
+	mkdir -p build/symbols/$(android_libdir)/
+	adb pull -a \
+		$(android_libdir)/libc.so \
+		$(android_libdir)/libart.so \
+		build/symbols/$(android_libdir)/
+	touch $@
 
 build/armeabi-v7a/runner: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
 	$(ANDROID_NDK_ROOT)/ndk-build \
@@ -72,4 +112,4 @@ build/frida-java.js: node_modules
 node_modules: package.json
 	npm install
 
-.PHONY: all deploy run watch
+.PHONY: all clean deploy run watch debug
