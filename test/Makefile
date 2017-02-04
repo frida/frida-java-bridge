@@ -45,7 +45,7 @@ debug: build/gdb.setup
 
 build/gdb.setup: build/symbols.stamp
 	( \
-		echo "set solib-search-path $(abspath build/symbols/$(ANDROID_LIBDIR))"; \
+		echo "set sysroot $(abspath build/symbols/)"; \
 		echo "directory $(android_sysroot)/usr/include"; \
 		echo "directory $(abspath .)"; \
 		echo "file $(abspath build/obj/local/$(ANDROID_ABI)/runner)"; \
@@ -54,11 +54,9 @@ build/gdb.setup: build/symbols.stamp
 
 build/symbols.stamp:
 	rm -rf build/symbols
-	mkdir -p build/symbols/$(ANDROID_LIBDIR)/
-	adb pull -a \
-		$(ANDROID_LIBDIR)/libc.so \
-		$(ANDROID_LIBDIR)/libart.so \
-		build/symbols/$(ANDROID_LIBDIR)/
+	mkdir -p build/symbols/$(ANDROID_BINDIR)/ build/symbols/$(ANDROID_LIBDIR)/
+	adb pull -a $(ANDROID_BINDIR)/linker build/symbols/$(ANDROID_BINDIR)/
+	adb pull -a $(shell adb shell "ls $(ANDROID_LIBDIR)/*.so") build/symbols/$(ANDROID_LIBDIR)/; \
 	touch $@
 
 build/armeabi-v7a/runner: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
