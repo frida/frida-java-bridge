@@ -27,6 +27,20 @@ public class MethodTest {
     }
 
     @Test
+    public void replacementCanThrowJavaException() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "var IllegalArgumentException = Java.use('java.lang.IllegalArgumentException');" +
+                "Badger.die.implementation = function () {" +
+                    "throw IllegalArgumentException.$new('Not today');" +
+                "};");
+
+        Badger badger = new Badger();
+
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("Not today");
+        badger.die();
+    }
+
     public void replacementPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "Badger.die.implementation = function () {" +
