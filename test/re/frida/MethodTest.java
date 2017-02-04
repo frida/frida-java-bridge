@@ -7,6 +7,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import javax.crypto.Cipher;
 import java.io.IOException;
 
 public class MethodTest {
@@ -52,6 +53,13 @@ public class MethodTest {
         thrown.expect(IllegalStateException.class);
         thrown.expectMessage("Already dead");
         badger.die();
+    }
+
+    @Test
+    public void staticFieldCanBeRead() {
+        loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
+                "send('' + Cipher.ENCRYPT_MODE.value);");
+        assertEquals("" + Cipher.ENCRYPT_MODE, script.getNextMessage());
     }
 
     private Script script = null;
