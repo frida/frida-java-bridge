@@ -15,7 +15,7 @@ public class MethodTest {
 
     @Test
     public void callPropagatesExceptions() {
-        Script script = loadScript("var Badger = Java.use('re.frida.Badger');" +
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
                 "try {" +
                     "badger.die();" +
@@ -56,7 +56,7 @@ public class MethodTest {
 
     private Script script = null;
 
-    private Script loadScript(String code) {
+    private void loadScript(String code) {
         Script script = new Script(TestRunner.fridaJavaBundle +
                 ";\n(function (Java) {" +
                 "Java.perform(function () {" +
@@ -64,7 +64,6 @@ public class MethodTest {
                 "});" +
                 "})(LocalJava);");
         this.script = script;
-        return script;
     }
 
     @After
@@ -77,7 +76,7 @@ public class MethodTest {
 }
 
 class Badger {
-    public void die() {
+    void die() {
         throw new IllegalStateException("Already dead");
     }
 }
