@@ -17,7 +17,7 @@ public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    /*@Test
+    @Test
     public void callPropagatesExceptions() {
         Script script = loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -47,9 +47,9 @@ public class MethodTest {
     @Test
     public void TestNewInterface() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
-                "try{" +
+                "try {" +
                 "  var tm = X509TrustManager.$new();" +
-                "}catch(e){" + 
+                "} catch(e) {" + 
                 "  var MethodTest = Java.use('re.frida.MethodTest');" +
                 "  MethodTest.Fail('couldnt create trustmanager: ' + e);" +
                 "}"
@@ -70,7 +70,7 @@ public class MethodTest {
                 "}"
                 );
         assertNull(failString);
-    }*/
+    }
     
     /*public int ReturnZero()
     {
@@ -101,7 +101,7 @@ public class MethodTest {
         assertNull(failString);
     }*/
     
-    /*@Test
+    @Test
     public void TestNativeLibraryLoading() {
         loadScript("var c = Java.use('java.lang.System');" +
                 "try{" +
@@ -129,13 +129,13 @@ public class MethodTest {
                 "}"
                 );
         assertNull(failString);
-    }*/
+    }
     
     private void DoAThingWithACypherMode( Cipher cipher )
     {
     }
     
-    @Test
+    /*@Test
     public void TestConstantField() {
         loadScript("var c = Java.use('javax.crypto.Cipher');" +
                 "var MethodTest = Java.use('re.frida.MethodTest');  " + 
@@ -181,7 +181,7 @@ public class MethodTest {
         }
         
         assertNull(failString);
-    }
+    }*/
     
     static private String failString = null;
     static private void Fail( String msg )
