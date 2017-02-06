@@ -48,8 +48,6 @@ function Runtime () {
   Object.defineProperty(this, 'androidVersion', {
     enumerable: true,
     get: function () {
-      assertCalledInJavaPerformCallback();
-
       return getAndroidVersion(classFactory);
     }
   });
