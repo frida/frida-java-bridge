@@ -18,7 +18,7 @@ public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    @Test
+    /*@Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -73,7 +73,7 @@ public class MethodTest {
     }
     
     @Test
-    public void TestClassForNameOrig() {
+    public void genericReturnOrig() {
         loadScript("var c = Java.use('java.lang.Class');" +
                 "try {" +
                 "  var orig = c.forName.overload('java.lang.String');" +
@@ -88,7 +88,7 @@ public class MethodTest {
     }
     
     @Test
-    public void TestClassForName() {
+    public void genericReturn() {
         loadScript("var c = Java.use('re.frida.Badger');" +
                 "try {" +
                 "  var orig = c.forName;" +
@@ -100,7 +100,7 @@ public class MethodTest {
                 "send('ok');"
                 );
         assertEquals("ok", script.getNextMessage());
-    }
+    }*/
     
     /*public int ReturnZero()
     {
@@ -131,43 +131,40 @@ public class MethodTest {
         assertNull(failString);
     }*/
     
-    /*@Test
-    public void TestNativeLibraryLoading() {
+    @Test
+    public void loadWorks() {
         loadScript("var c = Java.use('java.lang.System');" +
-                "try{" +
+                "try {" +
                 "  var orig = c.load;" +
-                "  c.load.implementation = function(s){ orig(s); };" +
+                "  c.load.implementation = function(s){ orig.call(this,s); };" +
                 "  c.load('/system/lib/libc.so')" +
-                "}catch(e){" + 
-                "  var MethodTest = Java.use('re.frida.MethodTest');" +
-                "  MethodTest.Fail('System.load() shat the bed: ' + e);" +
-                "}"
+                "} catch (e) {" + 
+                "  send('System.load: ' + e);" + 
+                "}" + 
+                "send('ok');"
                 );
-        assertNull(failString);
-        
+        assertEquals("ok", script.getNextMessage());
+    }
+    
+    @Test
+    public void runtimeLoadLibrary() {        
         loadScript("var c = Java.use('java.lang.Runtime');" +
-                "try{" +
+                "try {" +
                 "  var orig = c.loadLibrary.overload('java.lang.String');" +
-                "  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig(s); };" +
+                "  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
                 
                 // now look up the function again and call it
                 "  var now = c.loadLibrary.overload('java.lang.String');" +
-                "  now('/system/lib/libc.so')" +
-                "}catch(e){" + 
-                "  var MethodTest = Java.use('re.frida.MethodTest');" +
-                "  MethodTest.Fail('Runtime.loadLibrary() shat the bed: ' + e);" +
-                "}"
+                "  now.call(this, '/system/lib/libc.so')" +
+                "} catch(e) {" + 
+                "  send('Runtime.loadLibrary: ' + e);" + 
+                "}" + 
+                "send('ok');"
                 );
-        assertNull(failString);
+        assertEquals("ok", script.getNextMessage());
     }
     
-    static private String failString = null;
-    static private void Fail( String msg )
-    {
-      failString = msg;
-    }*/
-    
-    @Test
+    /*@Test
     public void constructorReturnsCorrectType() {
         loadScript("var c = Java.use('javax.crypto.spec.SecretKeySpec');" +
                 "try {" +
@@ -189,7 +186,7 @@ public class MethodTest {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
                 "send('' + Cipher.ENCRYPT_MODE.value);");
         assertEquals("" + Cipher.ENCRYPT_MODE, script.getNextMessage());
-    }
+    }*/
 
     private Script script = null;
 
