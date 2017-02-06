@@ -42,6 +42,7 @@ public class MethodTest {
         badger.die();
     }
 
+    @Test
     public void replacementPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "Badger.die.implementation = function () {" +
