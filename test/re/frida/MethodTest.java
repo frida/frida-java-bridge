@@ -60,7 +60,7 @@ public class MethodTest {
     }
     
     @Test
-    public void TestNewInterface() {
+    public void interfaceCannotBeInstantiated() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
                 "try {" +
                 "  var tm = X509TrustManager.$new();" +
