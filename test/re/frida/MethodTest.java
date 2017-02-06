@@ -70,7 +70,7 @@ public class MethodTest {
                 "send('ok');"
                 );
         assertEquals("ok", script.getNextMessage());
-    }*/
+    }
     
     @Test
     public void TestClassForNameOrig() {
@@ -100,7 +100,7 @@ public class MethodTest {
                 "send('ok');"
                 );
         assertEquals("ok", script.getNextMessage());
-    }
+    }*/
     
     /*public int ReturnZero()
     {
@@ -166,6 +166,23 @@ public class MethodTest {
     {
       failString = msg;
     }*/
+    
+    @Test
+    public void constructorReturnsCorrectType() {
+        loadScript("var c = Java.use('javax.crypto.spec.SecretKeySpec');" +
+                "try {" +
+                "  var orig = c.$init.overload('[B', 'java.lang.String');" +
+                "  c.$init.overload('[B', 'java.lang.String').implementation = function(a, b){ orig.call(this, a, b); };" +
+                
+                // now look up the function again and call it
+                "  var testConstructor = c.$new( [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 'AES' );" +
+                "} catch (e) {" + 
+                "  send('SecretKeySpec: ' + e);" + 
+                "}" + 
+                "send('ok');"
+                );
+        assertEquals("ok", script.getNextMessage());
+    }
 
     @Test
     public void staticFieldCanBeRead() {
