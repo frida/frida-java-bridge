@@ -131,58 +131,6 @@ public class MethodTest {
         assertNull(failString);
     }
     
-    private void DoAThingWithACypherMode( Cipher cipher )
-    {
-    }
-    
-    /*@Test
-    public void TestConstantField() {
-        loadScript("var c = Java.use('javax.crypto.Cipher');" +
-                "var MethodTest = Java.use('re.frida.MethodTest');  " + 
-                "try{" +
-                "  MethodTest.DoAThingWithACypherMode.implementation = function(cipher){" +
-                
-                // make sure the mode is accessible to avoid a crash
-                "    var theClass = c.class;" +
-                "    var field = theClass.getDeclaredField('mode');" +
-                "    field.setAccessible(true);" +
-                
-                // we've been passed a Cipher.  check and see which mode it is
-                // it should be an int
-                "    var cipherMode = field.getInt(cipher);" +
-                "    var ENCRYPT_MODE = theClass.ENCRYPT_MODE;" +
-                
-                // we set the mode to Cipher.ENCRYPT_MODE
-                // somehow Cipher.ENCRYPT_MODE is coming back as an object rather than an int
-                "    if( cipherMode !== ENCRYPT_MODE ){" +
-                "      MethodTest.Fail('TestFields: cipherMode !== ENCRYPT_MODE');" +
-                "    }" +
-                "  };" +
-                "  " +
-                "}catch(e){" + 
-                
-                // shouldnt reach here
-                "  MethodTest.Fail('TestFields shat the bed: ' + e);" +
-                "}"
-                );
-        
-        // cipher boilerplate
-        byte[] ivBytes = "1234567812345678".getBytes();
-        byte[] key = "keykeykeykeykey!".getBytes();
-        try{
-          SecretKeySpec secretKeySpec = new SecretKeySpec(key, "AES");        
-          Cipher cipher = Cipher.getInstance("AES/CBC/PKCS5Padding");
-          cipher.init(Cipher.ENCRYPT_MODE, secretKeySpec, new IvParameterSpec(ivBytes)); 
-          DoAThingWithACypherMode(cipher);
-        }
-        catch(Exception e){
-        // this try/catch should never get triggered.  just put it here so the compiler would shut up
-          assertNull("this shouldnt happen:" + e);
-        }
-        
-        assertNull(failString);
-    }*/
-    
     static private String failString = null;
     static private void Fail( String msg )
     {
