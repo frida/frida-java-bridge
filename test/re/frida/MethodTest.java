@@ -65,11 +65,11 @@ public class MethodTest {
                 "try {" +
                 "  var tm = X509TrustManager.$new();" +
                 "} catch(e) {" + 
-                "  var MethodTest = Java.use('re.frida.MethodTest');" +
-                "  MethodTest.Fail('couldnt create trustmanager: ' + e);" +
-                "}"
+                "  send('couldnt create trustmanager');" + 
+                "}" + 
+                "send('ok');"
                 );
-        assertNull(failString);
+        assertEquals("ok", script.getNextMessage());
     }
     
     @Test
