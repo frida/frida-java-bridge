@@ -64,7 +64,7 @@ public class MethodTest {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
                 "try {" +
                 "  var tm = X509TrustManager.$new();" +
-                "} catch(e) {" + 
+                "} catch (e) {" + 
                 "  send('couldnt create trustmanager');" + 
                 "}" + 
                 "send('ok');"
@@ -79,7 +79,7 @@ public class MethodTest {
                 "  var orig = c.forName.overload('java.lang.String');" +
                 "  c.forName.overload('java.lang.String').implementation = function(s){ orig(s); };" +
                 "  var d = c.forName('re.frida.MethodTest');" +
-                "} catch(e) {" + 
+                "} catch (e) {" + 
                 "  send('class.forName failed. ' + e);" + 
                 "}" + 
                 "send('ok');"
@@ -94,7 +94,7 @@ public class MethodTest {
                 "  var orig = c.forName;" +
                 "  c.forName.implementation = function(){ orig(); };" +
                 "  var d = c.forName();" +
-                "} catch(e) {" + 
+                "} catch (e) {" + 
                 "  send('forName failed. ' + e);" + 
                 "}" + 
                 "send('ok');"
