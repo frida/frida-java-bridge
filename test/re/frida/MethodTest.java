@@ -8,6 +8,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertNull;
 import org.junit.rules.ExpectedException;
 
+import javax.crypto.Cipher;
 import java.io.IOException;
 import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
@@ -19,7 +20,7 @@ public class MethodTest {
 
     @Test
     public void callPropagatesExceptions() {
-        Script script = loadScript("var Badger = Java.use('re.frida.Badger');" +
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
                 "try {" +
                     "badger.die();" +
@@ -31,6 +32,20 @@ public class MethodTest {
     }
 
     @Test
+    public void replacementCanThrowJavaException() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "var IllegalArgumentException = Java.use('java.lang.IllegalArgumentException');" +
+                "Badger.die.implementation = function () {" +
+                    "throw IllegalArgumentException.$new('Not today');" +
+                "};");
+
+        Badger badger = new Badger();
+
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("Not today");
+        badger.die();
+    }
+
     public void replacementPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "Badger.die.implementation = function () {" +
@@ -137,9 +152,16 @@ public class MethodTest {
       failString = msg;
     }
 
+    @Test
+    public void staticFieldCanBeRead() {
+        loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
+                "send('' + Cipher.ENCRYPT_MODE.value);");
+        assertEquals("" + Cipher.ENCRYPT_MODE, script.getNextMessage());
+    }
+
     private Script script = null;
 
-    private Script loadScript(String code) {
+    private void loadScript(String code) {
         Script script = new Script(TestRunner.fridaJavaBundle +
                 ";\n(function (Java) {" +
                 "Java.perform(function () {" +
@@ -147,7 +169,6 @@ public class MethodTest {
                 "});" +
                 "})(LocalJava);");
         this.script = script;
-        return script;
     }
 
     @After
@@ -160,7 +181,7 @@ public class MethodTest {
 }
 
 class Badger {
-    public void die() {
+    void die() {
         throw new IllegalStateException("Already dead");
     }
 }

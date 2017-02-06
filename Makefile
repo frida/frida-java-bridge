@@ -16,4 +16,8 @@ develop: node_modules
 node_modules: package.json
 	npm install
 
-.PHONY: all check
+clean:
+	rm -rf node_modules
+	$(MAKE) -C test clean
+
+.PHONY: all check check-gdb develop clean

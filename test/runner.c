@@ -2,6 +2,8 @@
 #include <fcntl.h>
 #include <frida-gumjs.h>
 #include <jni.h>
+#include <stdlib.h>
+#include <sys/system_properties.h>
 
 typedef struct _CreateScriptOperation CreateScriptOperation;
 typedef struct _DestroyScriptOperation DestroyScriptOperation;
@@ -43,6 +45,8 @@ static void on_unload_ready (GObject * source_object, GAsyncResult * result, gpo
 static void re_frida_script_on_message (GumScript * script, const gchar * message, GBytes * data, gpointer user_data);
 
 static void destroy_weak_ref (jweak ref);
+
+static guint get_system_api_level (void);
 
 static const JNINativeMethod re_frida_script_methods[] =
 {
@@ -133,7 +137,7 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
   JavaVMInitArgs args;
   jint result;
 
-  vm_module = dlopen ("libart.so", RTLD_LAZY | RTLD_GLOBAL);
+  vm_module = dlopen ((get_system_api_level () >= 21) ? "libart.so" : "libdvm.so", RTLD_LAZY | RTLD_GLOBAL);
   g_assert (vm_module != NULL);
 
   runtime_module = dlopen ("libandroid_runtime.so", RTLD_LAZY | RTLD_GLOBAL);
@@ -377,6 +381,17 @@ destroy_weak_ref (jweak ref)
   env = frida_java_get_env ();
 
   (*env)->DeleteWeakGlobalRef (env, ref);
+}
+
+static guint
+get_system_api_level (void)
+{
+  gchar sdk_version[PROP_VALUE_MAX];
+
+  sdk_version[0] = '\0';
+  __system_property_get ("ro.build.version.sdk", sdk_version);
+
+  return atoi (sdk_version);
 }
 
 void
