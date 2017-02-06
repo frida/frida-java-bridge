@@ -18,7 +18,7 @@ public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    /*@Test
+    @Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -100,7 +100,7 @@ public class MethodTest {
                 "send('ok');"
                 );
         assertEquals("ok", script.getNextMessage());
-    }*/
+    }
     
     /*public int ReturnZero()
     {
