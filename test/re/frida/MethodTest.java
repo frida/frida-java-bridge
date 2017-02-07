@@ -74,7 +74,7 @@ public class MethodTest {
     }
     
     @Test
-    public void genericReturnOrig() {
+    public void genericReturnJavaLangClass() {
         loadScript("var c = Java.use ('java.lang.Class');" +
                 "try {" +
                 "  var orig = c.forName.overload('java.lang.String');" +
@@ -91,7 +91,7 @@ public class MethodTest {
     }
     
     @Test
-    public void genericReturn() {
+    public void genericReturnBadger() {
         loadScript("var c = Java.use('re.frida.Badger');" +
                 "try {" +
                 "  var orig = c.forName;" +
@@ -107,15 +107,50 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
     
-    public int ReturnZero()
-    {
-      return 0;
+    // this one still just producing 
+    // Error: access violation accessing 0xf2b295fe
+    @Test
+    public void nativeReturnGenericVmStack() { 
+        loadScript(
+                "try {" +
+                "  var c = Java.use('dalvik.system.VMStack');" +
+                "  var orig = c.getStackClass2;" +
+                "  c.getStackClass2.implementation = function () {" +
+                "    orig.call(this);" +
+                "  };" +
+                "  var stack = c.getStackClass2();" +
+                "  send('ok');" +
+                "} catch(e) {" + 
+                "  send('nativeReturnGeneric: ' + e);" + 
+                "}"
+                );
+        assertEquals("ok", script.getNextMessage());
+    }
+    
+    // this one still just producing 
+    // Error: access violation accessing 0x2133c66a
+    @Test
+    public void nativeReturnGenericBadgerWrapperAroundJavaLangClass() { 
+        loadScript(
+                "try {" +
+                "  var c = Java.use('re.frida.Badger');" +
+                "  var orig = c.forNameYo;" +
+                "  c.forNameYo.implementation = function () {" +
+                "    orig.call(this);" +
+                "  };" +
+                "  var test = c.forNameYo('re.frida.Badger', false, null);" +
+                "  send('ok');" +
+                "} catch(e) {" + 
+                "  send('nativeReturnGeneric: ' + e);" + 
+                "}"
+                );
+        assertEquals("ok", script.getNextMessage());
     }
     
     // this one was just hanging indefinitely during the test, but in an actual app, it was crashing
     //! either one of those is bad.
     @Test
-    public void TestMethodInvoke() {
+    public void methodInvoke() {
         loadScript("var c = Java.use('java.lang.reflect.Method');" +
                 "var c2 = Java.use('java.lang.Class');" +
                 "try{" +
@@ -127,8 +162,8 @@ public class MethodTest {
                 "  };" +
                 
                 // now call it and see what happens
-                "  var cl = c2.forName('re.frida.MethodTest');" +
-                "  var method = cl.getMethod('ReturnZero', 'int');" +
+                "  var cl = c2.forName('re.frida.Badger');" +
+                "  var method = cl.getMethod('returnZero', 'int');" +
                 "  var ret = method.invoke();" +
                 "  send('ok');" +
                 "}catch(e){" + 
@@ -201,62 +236,6 @@ public class MethodTest {
         assertEquals("" + Cipher.ENCRYPT_MODE, script.getNextMessage());
     }
     
-    
-    // this one still just producing 
-    // Error: access violation accessing 0xf2b295fe
-    @Test
-    public void nativeReturnGeneric() { 
-        loadScript(
-                "try {" +
-                "  var c = Java.use('dalvik.system.VMStack');" +
-                "  var orig = c.getStackClass2;" +
-                "  c.getStackClass2.implementation = function () {" +
-                "    orig.call(this);" +
-                "  };" +
-                "  var stack = c.getStackClass2();" +
-                //"  var orig = c.loadLibrary.overload('java.lang.String');" +
-                //"  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
-                
-                // now look up the function again and call it
-                //"  var now = c.loadLibrary.overload('java.lang.String');" +
-                //"  now.call(this, '/system/lib/libc.so')" +
-                "  send('ok');" +
-                "} catch(e) {" + 
-                "  send('nativeReturnGeneric: ' + e);" + 
-                "}"
-                );
-        assertEquals("ok", script.getNextMessage());
-    }
-    
-    // this one still just producing 
-    // Error: access violation accessing 0x2133c66a
-    @Test
-    public void nativeReturnGeneric2() { 
-        loadScript(
-                "try {" +
-                "  var c = Java.use('re.frida.Badger');" +
-                "  var orig = c.forNameYo;" +
-                "  c.forNameYo.implementation = function () {" +
-                "    orig.call(this);" +
-                "  };" +
-                "  var test = c.forNameYo('re.frida.Badger', false, null);" +
-                "  " +
-                "  " +
-                //"  var stack = c.getStackClass2();" +
-                //"  var orig = c.loadLibrary.overload('java.lang.String');" +
-                //"  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
-                
-                // now look up the function again and call it
-                //"  var now = c.loadLibrary.overload('java.lang.String');" +
-                //"  now.call(this, '/system/lib/libc.so')" +
-                "  send('ok');" +
-                "} catch(e) {" + 
-                "  send('nativeReturnGeneric: ' + e);" + 
-                "}"
-                );
-        assertEquals("ok", script.getNextMessage());
-    }
-
     private Script script = null;
 
     private void loadScript(String code) {
@@ -283,12 +262,17 @@ class Badger {
         throw new IllegalStateException("Already dead");
     }
     
-    static Class<?>forName() {
+    static Class<?> forName() {
       return Badger.class;
     }
     
     public static Class<?> forNameYo(String className, boolean shouldInitialize,
             ClassLoader classLoader) throws ClassNotFoundException {
             return java.lang.Class.forName(className, shouldInitialize, classLoader);
+    }
+    
+    public int returnZero()
+    {
+      return 0;
     }
 }
