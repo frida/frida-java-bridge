@@ -78,7 +78,9 @@ public class MethodTest {
         loadScript("var c = Java.use ('java.lang.Class');" +
                 "try {" +
                 "  var orig = c.forName.overload('java.lang.String');" +
-                "  c.forName.overload('java.lang.String').implementation = function (s) { orig.call(this,s); };" +
+                "  c.forName.overload('java.lang.String').implementation = function (s) {" +
+                "    orig.call(this,s);" +
+                "  };" +
                 "  var d = c.forName('re.frida.MethodTest');" +
                 "  send('ok');" +
                 "} catch (e) {" + 
@@ -93,7 +95,9 @@ public class MethodTest {
         loadScript("var c = Java.use('re.frida.Badger');" +
                 "try {" +
                 "  var orig = c.forName;" +
-                "  c.forName.implementation = function () { orig.call(this); };" +
+                "  c.forName.implementation = function () { " +
+                "    orig.call(this);" +
+                "  };" +
                 "  var d = c.forName();" +
                 "  send('ok');" +
                 "} catch (e) {" + 
@@ -103,7 +107,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
     
-    /*public int ReturnZero()
+    public int ReturnZero()
     {
       return 0;
     }
@@ -118,31 +122,35 @@ public class MethodTest {
                 
                 // hook the original
                 "  var orig = c.invoke;" +
-                "  c.invoke.implementation = function(obj, ...args){ orig.call(this, obj, args); };" +
+                "  c.invoke.implementation = function (obj, ...args) { " +
+                "    orig.call(this, obj, args);" +
+                "  };" +
                 
                 // now call it and see what happens
                 "  var cl = c2.forName('re.frida.MethodTest');" +
                 "  var method = cl.getMethod('ReturnZero', 'int');" +
                 "  var ret = method.invoke();" +
+                "  send('ok');" +
                 "}catch(e){" + 
                 "  send('Method.invoke: ' + e);" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
-    }*/
+    }
     
     @Test
     public void loadWorks() {
         loadScript("var c = Java.use('java.lang.System');" +
                 "try {" +
                 "  var orig = c.load;" +
-                "  c.load.implementation = function(s){ orig.call(this,s); };" +
+                "  c.load.implementation = function (s) { " +
+                "    orig.call(this,s);" +
+                "  };" +
                 "  c.load('/system/lib/libc.so')" +
+                "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('System.load: ' + e);" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
     }
@@ -152,35 +160,39 @@ public class MethodTest {
         loadScript("var c = Java.use('java.lang.Runtime');" +
                 "try {" +
                 "  var orig = c.loadLibrary.overload('java.lang.String');" +
-                "  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
+                "  c.loadLibrary.overload('java.lang.String').implementation = function (s) {" +
+                "    orig.call(this,s);" +
+                "  };" +
                 
                 // now look up the function again and call it
                 "  var now = c.loadLibrary.overload('java.lang.String');" +
                 "  now.call(this, '/system/lib/libc.so')" +
+                "  send('ok');" +
                 "} catch(e) {" + 
                 "  send('Runtime.loadLibrary: ' + e);" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
     }
     
-    /*@Test
+    @Test
     public void constructorReturnsCorrectType() {
         loadScript("var c = Java.use('javax.crypto.spec.SecretKeySpec');" +
                 "try {" +
                 "  var orig = c.$init.overload('[B', 'java.lang.String');" +
-                "  c.$init.overload('[B', 'java.lang.String').implementation = function(a, b){ orig.call(this, a, b); };" +
+                "  c.$init.overload('[B', 'java.lang.String').implementation = function (a, b) { " +
+                "    orig.call(this, a, b);" +
+                "  };" +
                 
                 // now look up the function again and call it
                 "  var testConstructor = c.$new( [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 'AES' );" +
+                "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('SecretKeySpec: ' + e);" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
-    }*/
+    }
 
     @Test
     public void staticFieldCanBeRead() {
@@ -198,7 +210,9 @@ public class MethodTest {
                 "try {" +
                 "  var c = Java.use('dalvik.system.VMStack');" +
                 "  var orig = c.getStackClass2;" +
-                "  c.getStackClass2.implementation = function(){ orig.call(this); };" +
+                "  c.getStackClass2.implementation = function () {" +
+                "    orig.call(this);" +
+                "  };" +
                 "  var stack = c.getStackClass2();" +
                 //"  var orig = c.loadLibrary.overload('java.lang.String');" +
                 //"  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
@@ -206,10 +220,10 @@ public class MethodTest {
                 // now look up the function again and call it
                 //"  var now = c.loadLibrary.overload('java.lang.String');" +
                 //"  now.call(this, '/system/lib/libc.so')" +
+                "  send('ok');" +
                 "} catch(e) {" + 
                 "  send('nativeReturnGeneric: ' + e);" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
     }
@@ -222,7 +236,9 @@ public class MethodTest {
                 "try {" +
                 "  var c = Java.use('re.frida.Badger');" +
                 "  var orig = c.forNameYo;" +
-                "  c.forNameYo.implementation = function(){ orig.call(this); };" +
+                "  c.forNameYo.implementation = function () {" +
+                "    orig.call(this);" +
+                "  };" +
                 "  var test = c.forNameYo('re.frida.Badger', false, null);" +
                 "  " +
                 "  " +
@@ -233,10 +249,10 @@ public class MethodTest {
                 // now look up the function again and call it
                 //"  var now = c.loadLibrary.overload('java.lang.String');" +
                 //"  now.call(this, '/system/lib/libc.so')" +
+                "  send('ok');" +
                 "} catch(e) {" + 
                 "  send('nativeReturnGeneric: ' + e);" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
     }
