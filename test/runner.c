@@ -132,9 +132,10 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
 {
   void * vm_module, * runtime_module;
   jint (* create_java_vm) (JavaVM ** vm, JNIEnv ** env, void * vm_args);
-  jint (* register_natives) (JNIEnv * env, jclass clazz);
   JavaVMOption options[5];
   JavaVMInitArgs args;
+  jint (* register_natives) (JNIEnv * env);
+  jint (* register_natives_legacy) (JNIEnv * env, jclass clazz);
   jint result;
 
   vm_module = dlopen ((get_system_api_level () >= 21) ? "libart.so" : "libdvm.so", RTLD_LAZY | RTLD_GLOBAL);
@@ -145,9 +146,6 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
 
   create_java_vm = dlsym (vm_module, "JNI_CreateJavaVM");
   g_assert (create_java_vm != NULL);
-
-  register_natives = dlsym (runtime_module, "Java_com_android_internal_util_WithFramework_registerNatives");
-  g_assert (register_natives != NULL);
 
   options[0].optionString = "-verbose:jni";
   options[1].optionString = "-verbose:gc";
@@ -163,8 +161,20 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
   result = create_java_vm (vm, env, &args);
   g_assert_cmpint (result, ==, JNI_OK);
 
-  result = register_natives (*env, NULL);
-  g_assert_cmpint (result, ==, JNI_OK);
+  register_natives = dlsym (runtime_module, "registerFrameworkNatives");
+  if (register_natives != NULL)
+  {
+    result = register_natives (*env);
+    g_assert_cmpint (result, ==, JNI_OK);
+  }
+  else
+  {
+    register_natives_legacy = dlsym (runtime_module, "Java_com_android_internal_util_WithFramework_registerNatives");
+    g_assert (register_natives_legacy != NULL);
+
+    result = register_natives_legacy (*env, NULL);
+    g_assert_cmpint (result, ==, JNI_OK);
+  }
 }
 
 static void
