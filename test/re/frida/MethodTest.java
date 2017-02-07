@@ -10,14 +10,13 @@ import org.junit.rules.ExpectedException;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
-import javax.crypto.Cipher;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
-
+    
     @Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
@@ -59,7 +58,7 @@ public class MethodTest {
         thrown.expectMessage("Already dead");
         badger.die();
     }
-    
+
     @Test
     public void interfaceCannotBeInstantiated() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
@@ -68,14 +67,13 @@ public class MethodTest {
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('couldnt create trustmanager');" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
     }
-    
+
     @Test
     public void genericReturnJavaLangClass() {
-        loadScript("var c = Java.use ('java.lang.Class');" +
+        loadScript("var c = Java.use('java.lang.Class');" +
                 "try {" +
                 "  var orig = c.forName.overload('java.lang.String');" +
                 "  c.forName.overload('java.lang.String').implementation = function (s) {" +
@@ -85,11 +83,10 @@ public class MethodTest {
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('class.forName failed. ' + e);" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
     }
-    
+
     @Test
     public void genericReturnBadger() {
         loadScript("var c = Java.use('re.frida.Badger');" +
@@ -102,11 +99,10 @@ public class MethodTest {
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('forName failed. ' + e);" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
     }
-    
+
     // this one still just producing 
     // Error: access violation accessing 0xf2b295fe
     @Test
@@ -122,11 +118,10 @@ public class MethodTest {
                 "  send('ok');" +
                 "} catch(e) {" + 
                 "  send('nativeReturnGeneric: ' + e);" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
     }
-    
+
     // this one still just producing 
     // Error: access violation accessing 0x2133c66a
     @Test
@@ -142,14 +137,13 @@ public class MethodTest {
                 "  send('ok');" +
                 "} catch(e) {" + 
                 "  send('nativeReturnGeneric: ' + e);" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
     }
-    
+
     // this one was just hanging indefinitely during the test, but in an actual app, it was crashing
     //! either one of those is bad.
-    /*@Test
+    //@Test
     public void methodInvoke() {
         loadScript("var c = Java.use('java.lang.reflect.Method');" +
                 "var c2 = Java.use('java.lang.Class');" +
@@ -168,11 +162,10 @@ public class MethodTest {
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('Method.invoke: ' + e);" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
-    }*/
-    
+    }
+
     @Test
     public void loadWorks() {
         loadScript("var c = Java.use('java.lang.System');" +
@@ -185,11 +178,10 @@ public class MethodTest {
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('System.load: ' + e);" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
     }
-    
+
     @Test
     public void runtimeLoadLibrary() {        
         loadScript("var c = Java.use('java.lang.Runtime');" +
@@ -201,16 +193,15 @@ public class MethodTest {
                 
                 // now look up the function again and call it
                 "  var now = c.loadLibrary.overload('java.lang.String');" +
-                "  now.call(this, '/system/lib/libc.so')" +
+                "  now.call(c, '/system/lib/libc.so')" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('Runtime.loadLibrary: ' + e);" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
     }
-    
-    /*@Test
+
+    //@Test
     public void constructorReturnsCorrectType() {
         loadScript("var c = Java.use('javax.crypto.spec.SecretKeySpec');" +
                 "try {" +
@@ -220,14 +211,13 @@ public class MethodTest {
                 "  };" +
                 
                 // now look up the function again and call it
-                "  var testConstructor = c.$new( [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 'AES' );" +
+                "  var testConstructor = c.$new([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 'AES');" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('SecretKeySpec: ' + e);" + 
-                "}"
-                );
+                "}");
         assertEquals("ok", script.getNextMessage());
-    }*/
+    }
 
     @Test
     public void staticFieldCanBeRead() {
@@ -235,7 +225,7 @@ public class MethodTest {
                 "send('' + Cipher.ENCRYPT_MODE.value);");
         assertEquals("" + Cipher.ENCRYPT_MODE, script.getNextMessage());
     }
-    
+
     private Script script = null;
 
     private void loadScript(String code) {
@@ -261,18 +251,16 @@ class Badger {
     void die() {
         throw new IllegalStateException("Already dead");
     }
-    
+
     static Class<?> forName() {
         return Badger.class;
     }
-    
-    public static Class<?> forNameYo(String className, boolean shouldInitialize,
-            ClassLoader classLoader) throws ClassNotFoundException {
+
+    public static Class<?> forNameYo(String className, boolean shouldInitialize, ClassLoader classLoader) throws ClassNotFoundException {
         return java.lang.Class.forName(className, shouldInitialize, classLoader);
     }
-    
-    public int returnZero()
-    {
+
+    public int returnZero() {
         return 0;
     }
 }
