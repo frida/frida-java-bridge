@@ -16,7 +16,7 @@ import javax.crypto.spec.SecretKeySpec;
 public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
-    
+
     @Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
@@ -73,13 +73,13 @@ public class MethodTest {
 
     @Test
     public void genericReturnJavaLangClass() {
-        loadScript("var c = Java.use('java.lang.Class');" +
+        loadScript("var C = Java.use('java.lang.Class');" +
                 "try {" +
-                "  var orig = c.forName.overload('java.lang.String');" +
-                "  c.forName.overload('java.lang.String').implementation = function (s) {" +
-                "    orig.call(this,s);" +
+                "  var method1 = C.forName.overload('java.lang.String');" +
+                "  method1.implementation = function (s) {" +
+                "    method1.call(this, s);" +
                 "  };" +
-                "  var d = c.forName('re.frida.MethodTest');" +
+                "  var d = C.forName('re.frida.MethodTest');" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('class.forName failed. ' + e);" + 
@@ -89,13 +89,13 @@ public class MethodTest {
 
     @Test
     public void genericReturnBadger() {
-        loadScript("var c = Java.use('re.frida.Badger');" +
+        loadScript("var C = Java.use('re.frida.Badger');" +
                 "try {" +
-                "  var orig = c.forName;" +
-                "  c.forName.implementation = function () { " +
+                "  var method1 = C.forName;" +
+                "  method1.implementation = function () { " +
                 "    orig.call(this);" +
                 "  };" +
-                "  var d = c.forName();" +
+                "  var d = C.forName();" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('forName failed. ' + e);" + 
@@ -109,14 +109,14 @@ public class MethodTest {
     public void nativeReturnGenericVmStack() { 
         loadScript(
                 "try {" +
-                "  var c = Java.use('dalvik.system.VMStack');" +
-                "  var orig = c.getStackClass2;" +
-                "  c.getStackClass2.implementation = function () {" +
-                "    orig.call(this);" +
+                "  var C = Java.use('dalvik.system.VMStack');" +
+                "  var method1 = C.getStackClass2;" +
+                "  method1.implementation = function () {" +
+                "    method1.call(this);" +
                 "  };" +
-                "  var stack = c.getStackClass2();" +
+                "  var stack = C.getStackClass2();" +
                 "  send('ok');" +
-                "} catch(e) {" + 
+                "} catch (e) {" + 
                 "  send('nativeReturnGeneric: ' + e);" + 
                 "}");
         assertEquals("ok", script.getNextMessage());
@@ -128,14 +128,14 @@ public class MethodTest {
     public void nativeReturnGenericBadgerWrapperAroundJavaLangClass() { 
         loadScript(
                 "try {" +
-                "  var c = Java.use('re.frida.Badger');" +
-                "  var orig = c.forNameYo;" +
-                "  c.forNameYo.implementation = function () {" +
-                "    orig.call(this);" +
+                "  var C = Java.use('re.frida.Badger');" +
+                "  var method1 = C.forNameYo;" +
+                "  method1.implementation = function () {" +
+                "    method1.call(this);" +
                 "  };" +
-                "  var test = c.forNameYo('re.frida.Badger', false, null);" +
+                "  var test = C.forNameYo('re.frida.Badger', false, null);" +
                 "  send('ok');" +
-                "} catch(e) {" + 
+                "} catch (e) {" + 
                 "  send('nativeReturnGeneric: ' + e);" + 
                 "}");
         assertEquals("ok", script.getNextMessage());
@@ -145,20 +145,19 @@ public class MethodTest {
     //! either one of those is bad.
     //@Test
     public void methodInvoke() {
-        loadScript("var c = Java.use('java.lang.reflect.Method');" +
-                "var c2 = Java.use('java.lang.Class');" +
+        loadScript("var C = Java.use('java.lang.reflect.Method');" +
+                "var C2 = Java.use('java.lang.Class');" +
                 "try {" +
-                
                 // hook the original
-                "  var orig = c.invoke;" +
-                "  c.invoke.implementation = function (obj, ...args) { " +
-                "    orig.call(this, obj, args);" +
+                "  var method1 = C.invoke;" +
+                "  method1.implementation = function (obj, ...args) { " +
+                "    method1.call(this, obj, args);" +
                 "  };" +
                 
                 // now call it and see what happens
-                "  var cl = c2.forName('re.frida.Badger');" +
-                "  var method = cl.getMethod('returnZero', 'int');" +
-                "  var ret = method.invoke();" +
+                "  var cl = C2.forName('re.frida.Badger');" +
+                "  var method2 = cl.getMethod('returnZero', 'int');" +
+                "  var ret = method2.invoke();" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('Method.invoke: ' + e);" + 
@@ -168,13 +167,13 @@ public class MethodTest {
 
     @Test
     public void loadWorks() {
-        loadScript("var c = Java.use('java.lang.System');" +
+        loadScript("var C = Java.use('java.lang.System');" +
                 "try {" +
-                "  var orig = c.load;" +
-                "  c.load.implementation = function (s) { " +
-                "    orig.call(this,s);" +
+                "  var method1 = C.load;" +
+                "  method1.implementation = function (s) { " +
+                "    method1.call(this,s);" +
                 "  };" +
-                "  c.load('/system/lib/libc.so')" +
+                "  C.load('/system/lib/libc.so')" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('System.load: ' + e);" + 
@@ -184,16 +183,16 @@ public class MethodTest {
 
     @Test
     public void runtimeLoadLibrary() {        
-        loadScript("var c = Java.use('java.lang.Runtime');" +
+        loadScript("var C = Java.use('java.lang.Runtime');" +
                 "try {" +
-                "  var orig = c.loadLibrary.overload('java.lang.String');" +
-                "  c.loadLibrary.overload('java.lang.String').implementation = function (s) {" +
-                "    orig.call(this,s);" +
+                "  var method1 = C.loadLibrary.overload('java.lang.String');" +
+                "  method1.implementation = function (s) {" +
+                "    method1.call(this,s);" +
                 "  };" +
                 
                 // now look up the function again and call it
-                "  var now = c.loadLibrary.overload('java.lang.String');" +
-                "  now.call(c, '/system/lib/libc.so')" +
+                "  var now = C.loadLibrary.overload('java.lang.String');" +
+                "  now.call(C, '/system/lib/libc.so')" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('Runtime.loadLibrary: ' + e);" + 
@@ -203,15 +202,15 @@ public class MethodTest {
 
     //@Test
     public void constructorReturnsCorrectType() {
-        loadScript("var c = Java.use('javax.crypto.spec.SecretKeySpec');" +
+        loadScript("var C = Java.use('javax.crypto.spec.SecretKeySpec');" +
                 "try {" +
-                "  var orig = c.$init.overload('[B', 'java.lang.String');" +
-                "  c.$init.overload('[B', 'java.lang.String').implementation = function (a, b) { " +
-                "    orig.call(this, a, b);" +
+                "  var method1 = C.$init.overload('[B', 'java.lang.String');" +
+                "  method1.implementation = function (a, b) { " +
+                "    method1.call(this, a, b);" +
                 "  };" +
                 
                 // now look up the function again and call it
-                "  var testConstructor = c.$new([1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 'AES');" +
+                "  var testConstructor = C.$new([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 'AES');" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('SecretKeySpec: ' + e);" + 
