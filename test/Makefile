@@ -21,7 +21,7 @@ all:
 clean:
 	rm -rf build
 
-deploy: build/armeabi-v7a/runner build/tests.dex build/frida-java.js
+deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java.js
 	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir)"
 	adb push $^ $(deploy_data_dir)
 
@@ -59,7 +59,7 @@ build/symbols.stamp:
 	adb pull -a $(shell adb shell "ls $(ANDROID_LIBDIR)/*.so") build/symbols/$(ANDROID_LIBDIR)/; \
 	touch $@
 
-build/armeabi-v7a/runner: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
+build/$(ANDROID_ABI)/runner: runner.c build/obj/local/$(ANDROID_ABI)/libfrida-gumjs.a
 	$(ANDROID_NDK_ROOT)/ndk-build \
 		NDK_PROJECT_PATH=$$(pwd) \
 		NDK_APPLICATION_MK=$$(pwd)/Application.mk \
@@ -67,9 +67,9 @@ build/armeabi-v7a/runner: runner.c build/obj/local/armeabi-v7a/libfrida-gumjs.a
 		NDK_LIBS_OUT=$$(pwd)/build \
 		FRIDA_JAVA_TESTS_DATA_DIR=$(deploy_data_dir)
 
-build/obj/local/armeabi-v7a/libfrida-gumjs.a:
+build/obj/local/$(ANDROID_ABI)/libfrida-gumjs.a:
 	@mkdir -p $(@D)
-	curl -Ls https://github.com/frida/frida/releases/download/$(frida_version)/frida-gumjs-devkit-$(frida_version)-android-arm.tar.xz | tar -xJf - -C $(@D)
+	curl -Ls https://github.com/frida/frida/releases/download/$(frida_version)/frida-gumjs-devkit-$(frida_version)-android-$(ANDROID_ARCH).tar.xz | tar -xJf - -C $(@D)
 
 build/tests.dex: build/tests.jar
 	dx --dex --output=$@ $<
