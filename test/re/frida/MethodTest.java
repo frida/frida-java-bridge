@@ -263,16 +263,16 @@ class Badger {
     }
     
     static Class<?> forName() {
-      return Badger.class;
+        return Badger.class;
     }
     
     public static Class<?> forNameYo(String className, boolean shouldInitialize,
             ClassLoader classLoader) throws ClassNotFoundException {
-            return java.lang.Class.forName(className, shouldInitialize, classLoader);
+        return java.lang.Class.forName(className, shouldInitialize, classLoader);
     }
     
     public int returnZero()
     {
-      return 0;
+        return 0;
     }
 }
