@@ -93,7 +93,7 @@ public class MethodTest {
                 "try {" +
                 "  var method1 = C.forName;" +
                 "  method1.implementation = function () { " +
-                "    orig.call(this);" +
+                "    method1.call(this);" +
                 "  };" +
                 "  var d = C.forName();" +
                 "  send('ok');" +
