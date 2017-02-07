@@ -77,7 +77,7 @@ public class MethodTest {
         loadScript("var c = Java.use('java.lang.Class');" +
                 "try {" +
                 "  var orig = c.forName.overload('java.lang.String');" +
-                "  c.forName.overload('java.lang.String').implementation = function(s){ orig(s); };" +
+                "  c.forName.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
                 "  var d = c.forName('re.frida.MethodTest');" +
                 "} catch (e) {" + 
                 "  send('class.forName failed. ' + e);" + 
@@ -92,7 +92,7 @@ public class MethodTest {
         loadScript("var c = Java.use('re.frida.Badger');" +
                 "try {" +
                 "  var orig = c.forName;" +
-                "  c.forName.implementation = function(){ orig(); };" +
+                "  c.forName.implementation = function(){ orig.call(this); };" +
                 "  var d = c.forName();" +
                 "} catch (e) {" + 
                 "  send('forName failed. ' + e);" + 
@@ -117,21 +117,21 @@ public class MethodTest {
                 
                 // hook the original
                 "  var orig = c.invoke;" +
-                "  c.invoke.implementation = function(obj, ...args){ orig(obj, args); };" +
+                "  c.invoke.implementation = function(obj, ...args){ orig.call(this, obj, args); };" +
                 
                 // now call it and see what happens
-                "  var cl = c.forName('re.frida.MethodTest');" +
+                "  var cl = c2.forName('re.frida.MethodTest');" +
                 "  var method = cl.getMethod('ReturnZero', 'int');" +
                 "  var ret = method.invoke();" +
                 "}catch(e){" + 
-                "  var MethodTest = Java.use('re.frida.MethodTest');" +
-                "  MethodTest.Fail('Method.invoke shat the bed: ' + e);" +
-                "}"
+                "  send('Method.invoke: ' + e);" + 
+                "}" + 
+                "send('ok');"
                 );
-        assertNull(failString);
+        assertEquals("ok", script.getNextMessage());
     }*/
     
-    @Test
+   /* @Test
     public void loadWorks() {
         loadScript("var c = Java.use('java.lang.System');" +
                 "try {" +
@@ -164,7 +164,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
     
-    /*@Test
+    @Test
     public void constructorReturnsCorrectType() {
         loadScript("var c = Java.use('javax.crypto.spec.SecretKeySpec');" +
                 "try {" +
@@ -179,13 +179,65 @@ public class MethodTest {
                 "send('ok');"
                 );
         assertEquals("ok", script.getNextMessage());
-    }
+    }*/
 
-    @Test
+    /*@Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
                 "send('' + Cipher.ENCRYPT_MODE.value);");
         assertEquals("" + Cipher.ENCRYPT_MODE, script.getNextMessage());
+    }*/
+    
+    
+    // this one still just producing 
+    // Error: access violation accessing 0xf2b295fe
+    /*@Test
+    public void nativeReturnGeneric() { 
+        loadScript(
+                "try {" +
+                "  var c = Java.use('dalvik.system.VMStack');" +
+                "  var orig = c.getStackClass2;" +
+                "  c.getStackClass2.implementation = function(){ orig.call(this); };" +
+                "  var stack = c.getStackClass2();" +
+                //"  var orig = c.loadLibrary.overload('java.lang.String');" +
+                //"  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
+                
+                // now look up the function again and call it
+                //"  var now = c.loadLibrary.overload('java.lang.String');" +
+                //"  now.call(this, '/system/lib/libc.so')" +
+                "} catch(e) {" + 
+                "  send('nativeReturnGeneric: ' + e);" + 
+                "}" + 
+                "send('ok');"
+                );
+        assertEquals("ok", script.getNextMessage());
+    }*/
+    
+    // this one still just producing 
+    // Error: access violation accessing 0x2133c66a
+    /*@Test
+    public void nativeReturnGeneric() { 
+        loadScript(
+                "try {" +
+                "  var c = Java.use('re.frida.Badger');" +
+                "  var orig = c.forNameYo;" +
+                "  c.forNameYo.implementation = function(){ orig.call(this); };" +
+                "  var test = c.forNameYo('re.frida.Badger', false, null);" +
+                "  " +
+                "  " +
+                //"  var stack = c.getStackClass2();" +
+                //"  var orig = c.loadLibrary.overload('java.lang.String');" +
+                //"  c.loadLibrary.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
+                
+                // now look up the function again and call it
+                //"  var now = c.loadLibrary.overload('java.lang.String');" +
+                //"  now.call(this, '/system/lib/libc.so')" +
+                "} catch(e) {" + 
+                "  send('nativeReturnGeneric: ' + e);" + 
+                "}" + 
+                "send('ok');"
+                );
+        assertEquals("ok", script.getNextMessage());
     }*/
 
     private Script script = null;
@@ -216,5 +268,10 @@ class Badger {
     
     static Class<?>forName() {
       return Badger.class;
+    }
+    
+    public static Class<?> forNameYo(String className, boolean shouldInitialize,
+            ClassLoader classLoader) throws ClassNotFoundException {
+            return java.lang.Class.forName(className, shouldInitialize, classLoader);
     }
 }
