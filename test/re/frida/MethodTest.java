@@ -92,7 +92,7 @@ public class MethodTest {
         loadScript("var C = Java.use('re.frida.Badger');" +
                 "try {" +
                 "  var method1 = C.forName;" +
-                "  method1.implementation = function () { " +
+                "  method1.implementation = function () {" +
                 "    return method1.call(this);" +
                 "  };" +
                 "  var d = C.forName();" +
@@ -150,7 +150,7 @@ public class MethodTest {
                 "try {" +
                 // hook the original
                 "  var method1 = C.invoke;" +
-                "  method1.implementation = function () { " +
+                "  method1.implementation = function () {" +
                 "    return method1.apply(this, arguments);" +
                 "  };" +
                 
@@ -170,10 +170,10 @@ public class MethodTest {
         loadScript("var C = Java.use('java.lang.System');" +
                 "try {" +
                 "  var method1 = C.load;" +
-                "  method1.implementation = function (s) { " +
-                "    return method1.call(this,s);" +
+                "  method1.implementation = function (s) {" +
+                "    return method1.call(this, s);" +
                 "  };" +
-                "  C.load('/system/lib/libc.so')" +
+                "  C.load('/system/lib/libc.so');" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('System.load: ' + e);" + 
@@ -187,12 +187,12 @@ public class MethodTest {
                 "try {" +
                 "  var method1 = C.loadLibrary.overload('java.lang.String');" +
                 "  method1.implementation = function (s) {" +
-                "    return method1.call(this,s);" +
+                "    return method1.call(this, s);" +
                 "  };" +
                 
                 // now look up the function again and call it
                 "  var now = C.loadLibrary.overload('java.lang.String');" +
-                "  now.call(C, '/system/lib/libc.so')" +
+                "  now.call(C, '/system/lib/libc.so');" +
                 "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('Runtime.loadLibrary: ' + e);" + 
@@ -205,7 +205,7 @@ public class MethodTest {
         loadScript("var C = Java.use('javax.crypto.spec.SecretKeySpec');" +
                 "try {" +
                 "  var method1 = C.$init.overload('[B', 'java.lang.String');" +
-                "  method1.implementation = function (a, b) { " +
+                "  method1.implementation = function (a, b) {" +
                 "    return method1.call(this, a, b);" +
                 "  };" +
                 
