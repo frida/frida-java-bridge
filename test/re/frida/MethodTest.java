@@ -153,7 +153,7 @@ public class MethodTest {
     public void methodInvoke() {
         loadScript("var c = Java.use('java.lang.reflect.Method');" +
                 "var c2 = Java.use('java.lang.Class');" +
-                "try{" +
+                "try {" +
                 
                 // hook the original
                 "  var orig = c.invoke;" +
@@ -166,7 +166,7 @@ public class MethodTest {
                 "  var method = cl.getMethod('returnZero', 'int');" +
                 "  var ret = method.invoke();" +
                 "  send('ok');" +
-                "}catch(e){" + 
+                "} catch (e) {" + 
                 "  send('Method.invoke: ' + e);" + 
                 "}"
                 );
@@ -203,7 +203,7 @@ public class MethodTest {
                 "  var now = c.loadLibrary.overload('java.lang.String');" +
                 "  now.call(this, '/system/lib/libc.so')" +
                 "  send('ok');" +
-                "} catch(e) {" + 
+                "} catch (e) {" + 
                 "  send('Runtime.loadLibrary: ' + e);" + 
                 "}"
                 );
