@@ -18,7 +18,7 @@ public class MethodTest {
     @Rule
     public final ExpectedException thrown = ExpectedException.none();
 
-    /*@Test
+    @Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -65,25 +65,25 @@ public class MethodTest {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
                 "try {" +
                 "  var tm = X509TrustManager.$new();" +
+                "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('couldnt create trustmanager');" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
     }
     
     @Test
     public void genericReturnOrig() {
-        loadScript("var c = Java.use('java.lang.Class');" +
+        loadScript("var c = Java.use ('java.lang.Class');" +
                 "try {" +
                 "  var orig = c.forName.overload('java.lang.String');" +
-                "  c.forName.overload('java.lang.String').implementation = function(s){ orig.call(this,s); };" +
+                "  c.forName.overload('java.lang.String').implementation = function (s) { orig.call(this,s); };" +
                 "  var d = c.forName('re.frida.MethodTest');" +
+                "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('class.forName failed. ' + e);" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
     }
@@ -93,15 +93,15 @@ public class MethodTest {
         loadScript("var c = Java.use('re.frida.Badger');" +
                 "try {" +
                 "  var orig = c.forName;" +
-                "  c.forName.implementation = function(){ orig.call(this); };" +
+                "  c.forName.implementation = function () { orig.call(this); };" +
                 "  var d = c.forName();" +
+                "  send('ok');" +
                 "} catch (e) {" + 
                 "  send('forName failed. ' + e);" + 
-                "}" + 
-                "send('ok');"
+                "}"
                 );
         assertEquals("ok", script.getNextMessage());
-    }*/
+    }
     
     /*public int ReturnZero()
     {
@@ -132,7 +132,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }*/
     
-   /* @Test
+    @Test
     public void loadWorks() {
         loadScript("var c = Java.use('java.lang.System');" +
                 "try {" +
@@ -165,7 +165,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
     
-    @Test
+    /*@Test
     public void constructorReturnsCorrectType() {
         loadScript("var c = Java.use('javax.crypto.spec.SecretKeySpec');" +
                 "try {" +
@@ -182,17 +182,17 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }*/
 
-    /*@Test
+    @Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
                 "send('' + Cipher.ENCRYPT_MODE.value);");
         assertEquals("" + Cipher.ENCRYPT_MODE, script.getNextMessage());
-    }*/
+    }
     
     
     // this one still just producing 
     // Error: access violation accessing 0xf2b295fe
-    /*@Test
+    @Test
     public void nativeReturnGeneric() { 
         loadScript(
                 "try {" +
@@ -212,12 +212,12 @@ public class MethodTest {
                 "send('ok');"
                 );
         assertEquals("ok", script.getNextMessage());
-    }*/
+    }
     
     // this one still just producing 
     // Error: access violation accessing 0x2133c66a
-    /*@Test
-    public void nativeReturnGeneric() { 
+    @Test
+    public void nativeReturnGeneric2() { 
         loadScript(
                 "try {" +
                 "  var c = Java.use('re.frida.Badger');" +
@@ -239,7 +239,7 @@ public class MethodTest {
                 "send('ok');"
                 );
         assertEquals("ok", script.getNextMessage());
-    }*/
+    }
 
     private Script script = null;
 
