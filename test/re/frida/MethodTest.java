@@ -59,7 +59,7 @@ public class MethodTest {
         badger.die();
     }
 
-    @Test
+    // @Test
     public void interfaceCannotBeInstantiated() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
                 "try {" +
@@ -71,7 +71,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    @Test
+    // @Test
     public void genericReturnJavaLangClass() {
         loadScript("var C = Java.use('java.lang.Class');" +
                 "try {" +
@@ -87,7 +87,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    @Test
+    // @Test
     public void genericReturnBadger() {
         loadScript("var C = Java.use('re.frida.Badger');" +
                 "try {" +
@@ -105,7 +105,7 @@ public class MethodTest {
 
     // this one still just producing
     // Error: access violation accessing 0xf2b295fe
-    @Test
+    // @Test
     public void nativeReturnGenericVmStack() {
         loadScript(
                 "try {" +
@@ -124,7 +124,7 @@ public class MethodTest {
 
     // this one still just producing
     // Error: access violation accessing 0x2133c66a
-    @Test
+    // @Test
     public void nativeReturnGenericBadgerWrapperAroundJavaLangClass() {
         loadScript(
                 "try {" +
@@ -143,7 +143,7 @@ public class MethodTest {
 
     // this one was just hanging indefinitely during the test, but in an actual app, it was crashing
     //! either one of those is bad.
-    //@Test
+    // @Test
     public void methodInvoke() {
         loadScript("var C = Java.use('java.lang.reflect.Method');" +
                 "var C2 = Java.use('java.lang.Class');" +
@@ -165,7 +165,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    @Test
+    // @Test
     public void loadWorks() {
         loadScript("var C = Java.use('java.lang.System');" +
                 "try {" +
@@ -181,7 +181,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    @Test
+    // @Test
     public void runtimeLoadLibrary() {
         loadScript("var C = Java.use('java.lang.Runtime');" +
                 "try {" +
@@ -200,7 +200,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    //@Test
+    @Test
     public void constructorReturnsCorrectType() {
         loadScript("var C = Java.use('javax.crypto.spec.SecretKeySpec');" +
                 "try {" +
@@ -218,7 +218,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    @Test
+    // @Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
                 "send('' + Cipher.ENCRYPT_MODE.value);");
