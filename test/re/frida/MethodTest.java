@@ -65,8 +65,8 @@ public class MethodTest {
                 "try {" +
                 "  var tm = X509TrustManager.$new();" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('couldnt create trustmanager');" + 
+                "} catch (e) {" +
+                "  send('couldnt create trustmanager');" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
@@ -81,8 +81,8 @@ public class MethodTest {
                 "  };" +
                 "  var d = C.forName('re.frida.MethodTest');" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('class.forName failed. ' + e);" + 
+                "} catch (e) {" +
+                "  send('class.forName failed. ' + e);" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
@@ -97,16 +97,16 @@ public class MethodTest {
                 "  };" +
                 "  var d = C.forName();" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('forName failed. ' + e);" + 
+                "} catch (e) {" +
+                "  send('forName failed. ' + e);" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
 
-    // this one still just producing 
+    // this one still just producing
     // Error: access violation accessing 0xf2b295fe
     @Test
-    public void nativeReturnGenericVmStack() { 
+    public void nativeReturnGenericVmStack() {
         loadScript(
                 "try {" +
                 "  var C = Java.use('dalvik.system.VMStack');" +
@@ -116,16 +116,16 @@ public class MethodTest {
                 "  };" +
                 "  var stack = C.getStackClass2();" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('nativeReturnGeneric: ' + e);" + 
+                "} catch (e) {" +
+                "  send('nativeReturnGeneric: ' + e);" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
 
-    // this one still just producing 
+    // this one still just producing
     // Error: access violation accessing 0x2133c66a
     @Test
-    public void nativeReturnGenericBadgerWrapperAroundJavaLangClass() { 
+    public void nativeReturnGenericBadgerWrapperAroundJavaLangClass() {
         loadScript(
                 "try {" +
                 "  var C = Java.use('re.frida.Badger');" +
@@ -135,8 +135,8 @@ public class MethodTest {
                 "  };" +
                 "  var test = C.forNameYo('re.frida.Badger', false, null);" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('nativeReturnGeneric: ' + e);" + 
+                "} catch (e) {" +
+                "  send('nativeReturnGeneric: ' + e);" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
@@ -153,14 +153,14 @@ public class MethodTest {
                 "  method1.implementation = function () {" +
                 "    return method1.apply(this, arguments);" +
                 "  };" +
-                
+
                 // now call it and see what happens
                 "  var cl = C2.forName('re.frida.Badger');" +
                 "  var method2 = cl.getMethod('returnZero', 'int');" +
                 "  var ret = method2.invoke();" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('Method.invoke: ' + e);" + 
+                "} catch (e) {" +
+                "  send('Method.invoke: ' + e);" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
@@ -175,27 +175,27 @@ public class MethodTest {
                 "  };" +
                 "  C.load('/system/lib/libc.so');" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('System.load: ' + e);" + 
+                "} catch (e) {" +
+                "  send('System.load: ' + e);" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
 
     @Test
-    public void runtimeLoadLibrary() {        
+    public void runtimeLoadLibrary() {
         loadScript("var C = Java.use('java.lang.Runtime');" +
                 "try {" +
                 "  var method1 = C.loadLibrary.overload('java.lang.String');" +
                 "  method1.implementation = function (s) {" +
                 "    return method1.call(this, s);" +
                 "  };" +
-                
+
                 // now look up the function again and call it
                 "  var now = C.loadLibrary.overload('java.lang.String');" +
                 "  now.call(C, '/system/lib/libc.so');" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('Runtime.loadLibrary: ' + e);" + 
+                "} catch (e) {" +
+                "  send('Runtime.loadLibrary: ' + e);" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
@@ -208,12 +208,12 @@ public class MethodTest {
                 "  method1.implementation = function (a, b) {" +
                 "    return method1.call(this, a, b);" +
                 "  };" +
-                
+
                 // now look up the function again and call it
                 "  var testConstructor = C.$new([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 'AES');" +
                 "  send('ok');" +
-                "} catch (e) {" + 
-                "  send('SecretKeySpec: ' + e);" + 
+                "} catch (e) {" +
+                "  send('SecretKeySpec: ' + e);" +
                 "}");
         assertEquals("ok", script.getNextMessage());
     }
