@@ -81,22 +81,6 @@ public class MethodTest {
     }
 
     // @Test
-    public void genericReturnJavaLangClass() {
-        loadScript("var C = Java.use('java.lang.Class');" +
-                "try {" +
-                "  var method1 = C.forName.overload('java.lang.String');" +
-                "  method1.implementation = function (s) {" +
-                "    return method1.call(this, s);" +
-                "  };" +
-                "  var d = C.forName('re.frida.MethodTest');" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('class.forName failed. ' + e);" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
-    // @Test
     public void genericReturnBadger() {
         loadScript("var C = Java.use('re.frida.Badger');" +
                 "try {" +
