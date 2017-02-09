@@ -59,6 +59,15 @@ public class MethodTest {
         badger.die();
     }
 
+    @Test
+    public void genericsCanBeUsed() {
+        loadScript("var ArrayList = Java.use('java.util.ArrayList');" +
+                "var items = ArrayList.$new();" +
+                "items.add('Badger');" +
+                "send(items.get(0).toString());");
+        assertEquals("Badger", script.getNextMessage());
+    }
+
     // @Test
     public void interfaceCannotBeInstantiated() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
