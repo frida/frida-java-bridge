@@ -72,7 +72,6 @@ main (int argc, char * argv[])
   jobjectArray argv_value;
   jstring data_dir_value;
   guint arg_index;
-  GumScriptBackend * backend;
   GCancellable * cancellable = NULL;
   GError * error = NULL;
   GumScript * script;
@@ -81,7 +80,7 @@ main (int argc, char * argv[])
   gum_init_embedded ();
 
   js_backend = gum_script_backend_obtain_v8 ();
-  js_context = gum_script_backend_get_main_context (backend);
+  js_context = gum_script_backend_get_main_context (js_backend);
 
   frida_java_init_vm (&vm, &env);
   java_vm = vm;
