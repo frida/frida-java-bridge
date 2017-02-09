@@ -72,10 +72,6 @@ main (int argc, char * argv[])
   jobjectArray argv_value;
   jstring data_dir_value;
   guint arg_index;
-  GCancellable * cancellable = NULL;
-  GError * error = NULL;
-  GumScript * script;
-  GMainContext * context;
 
   gum_init_embedded ();
 
@@ -279,7 +275,6 @@ static void
 on_create_ready (GObject * source_object, GAsyncResult * result, gpointer user_data)
 {
   CreateScriptOperation * op = user_data;
-  GError * error = NULL;
 
   op->script = gum_script_backend_create_finish (js_backend, result, &op->error);
   if (op->error != NULL)
