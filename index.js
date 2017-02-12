@@ -12,6 +12,8 @@ const {
   checkJniResult
 } = require('./lib/result');
 
+const pointerSize = Process.pointerSize;
+
 function Runtime () {
   let api = null;
   let vm = null;
@@ -81,13 +83,65 @@ function Runtime () {
     }
   };
 
-  function _enumerateLoadedClasses (callbacks, onlyDescription) {
-    assertJavaApiIsAvailable();
+  class ArtClassVisitor {
+    constructor (visit) {
+      const visitor = Memory.alloc(4 * pointerSize);
 
-    if (api.flavor !== 'dalvik') {
-      throw new Error('Enumerating loaded classes is only supported on Dalvik for now');
+      const vtable = visitor.add(pointerSize);
+      Memory.writePointer(visitor, vtable);
+
+      const onVisit = new NativeCallback((self, klass) => {
+        return visit(klass) === true ? 1 : 0;
+      }, 'bool', ['pointer', 'pointer']);
+      Memory.writePointer(vtable.add(2 * pointerSize), onVisit);
+
+      this.handle = visitor;
+      this._onVisit = onVisit;
+    }
+  }
+
+  function enumerateLoadedClassesArt (callbacks) {
+    const env = vm.getEnv();
+
+    const classHandles = [];
+    const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
+    const vmHandle = api.vm;
+    const threadHandle = Memory.readPointer(env.handle.add(pointerSize));
+    const collectClassHandles = new ArtClassVisitor(klass => {
+      classHandles.push(addGlobalReference(vmHandle, threadHandle, klass));
+      return true;
+    });
+
+    withAllArtThreadsSuspended(() => {
+      api['art::ClassLinker::VisitClasses'](api.artClassLinker, collectClassHandles);
+    });
+
+    try {
+      classHandles.forEach(handle => {
+        const className = env.getClassName(handle);
+        callbacks.onMatch(className);
+      });
+    } finally {
+      classHandles.forEach(handle => {
+        env.deleteGlobalRef(handle);
+      });
     }
 
+    callbacks.onComplete();
+  }
+
+  function withAllArtThreadsSuspended (fn) {
+    const scope = Memory.alloc(pointerSize);
+    const longSuspend = false;
+    api['art::ScopedSuspendAll::ScopedSuspendAll'](scope, Memory.allocUtf8String('frida'), longSuspend ? 1 : 0);
+    try {
+      fn();
+    } finally {
+      api['art::ScopedSuspendAll::~ScopedSuspendAll'](scope);
+    }
+  }
+
+  function enumerateLoadedClassesDalvik (callbacks) {
     const HASH_TOMBSTONE = ptr('0xcbcacccd');
     const loadedClassesOffset = 172;
     const hashEntrySize = 8;
@@ -101,21 +155,10 @@ function Runtime () {
     for (let offset = 0; offset < end; offset += hashEntrySize) {
       const pEntryPtr = pEntries.add(offset);
       const dataPtr = Memory.readPointer(pEntryPtr.add(4));
-      if (!(HASH_TOMBSTONE.equals(dataPtr) || NULL.equals(dataPtr))) {
+      if (!(HASH_TOMBSTONE.equals(dataPtr) || dataPtr.isNull())) {
         const descriptionPtr = Memory.readPointer(dataPtr.add(24));
         const description = Memory.readCString(descriptionPtr);
-        if (onlyDescription) {
-          callbacks.onMatch(description);
-        } else {
-          const objectSize = Memory.readU32(dataPtr.add(56));
-          const sourceFile = Memory.readCString(Memory.readPointer(dataPtr.add(152)));
-          callbacks.onMatch({
-            pointer: pEntryPtr,
-            objectSize: objectSize,
-            sourceFile: sourceFile,
-            description: description
-          });
-        }
+        callbacks.onMatch(description);
       }
     }
     callbacks.onComplete();
@@ -128,10 +171,11 @@ function Runtime () {
 
       const classes = [];
       this.enumerateLoadedClasses({
-        onMatch: function (c) {
+        onMatch(c) {
           classes.push(c);
         },
-        onComplete: function () {}
+        onComplete() {
+        }
       });
       return classes;
     }
@@ -140,7 +184,13 @@ function Runtime () {
   Object.defineProperty(this, 'enumerateLoadedClasses', {
     enumerable: true,
     value: function (callbacks) {
-      _enumerateLoadedClasses(callbacks, true);
+      assertJavaApiIsAvailable();
+
+      if (api.flavor === 'art') {
+        enumerateLoadedClassesArt(callbacks);
+      } else {
+        enumerateLoadedClassesDalvik(callbacks);
+      }
     }
   });
 

@@ -16,7 +16,10 @@ public class TestRunner {
 
         TestRunner.fridaJavaBundle = slurp("frida-java.js");
 
-        JUnitCore.main("re.frida.MethodTest");
+        JUnitCore.main(
+            "re.frida.ClassRegistryTest",
+            "re.frida.MethodTest"
+        );
     }
 
     public static String slurp(String name) {
