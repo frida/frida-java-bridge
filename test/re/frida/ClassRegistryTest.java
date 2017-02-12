@@ -24,6 +24,20 @@ public class ClassRegistryTest {
         assertEquals("found=true", script.getNextMessage());
     }
 
+    @Test
+    public void classLoadersCanBeEnumerated() {
+        loadScript("var count = 0;" +
+                "Java.enumerateClassLoaders({" +
+                "  onMatch: function (loader) {" +
+                "    count++;" +
+                "  }," +
+                "  onComplete: function () {" +
+                "    send((count > 0) ? 'count > 0' : 'count == 0');" +
+                "  }" +
+                "});");
+        assertEquals("count > 0", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {

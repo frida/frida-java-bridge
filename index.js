@@ -83,6 +83,66 @@ function Runtime () {
     }
   };
 
+  Object.defineProperty(this, 'enumerateLoadedClasses', {
+    enumerable: true,
+    value: function (callbacks) {
+      assertJavaApiIsAvailable();
+
+      if (api.flavor === 'art') {
+        enumerateLoadedClassesArt(callbacks);
+      } else {
+        enumerateLoadedClassesDalvik(callbacks);
+      }
+    }
+  });
+
+  Object.defineProperty(this, 'enumerateLoadedClassesSync', {
+    enumerable: true,
+    value: function () {
+      assertJavaApiIsAvailable();
+
+      const classes = [];
+      this.enumerateLoadedClasses({
+        onMatch(c) {
+          classes.push(c);
+        },
+        onComplete() {
+        }
+      });
+      return classes;
+    }
+  });
+
+  Object.defineProperty(this, 'enumerateClassLoaders', {
+    enumerable: true,
+    value: function (callbacks) {
+      assertJavaApiIsAvailable();
+
+      if (api.flavor === 'art') {
+        enumerateClassLoadersArt(callbacks);
+      } else {
+        throw new Error('Enumerating class loaders is only supported on ART');
+      }
+    }
+  });
+
+  Object.defineProperty(this, 'enumerateClassLoadersSync', {
+    enumerable: true,
+    value: function () {
+      assertJavaApiIsAvailable();
+
+      const loaders = [];
+      this.enumerateClassLoaders({
+        onMatch(c) {
+          loaders.push(c);
+        },
+        onComplete() {
+        }
+      });
+      return loaders;
+    }
+  });
+
   class ArtClassVisitor {
     constructor (visit) {
       const visitor = Memory.alloc(4 * pointerSize);
@@ -93,6 +153,23 @@ function Runtime () {
       const onVisit = new NativeCallback((self, klass) => {
         return visit(klass) === true ? 1 : 0;
       }, 'bool', ['pointer', 'pointer']);
+      Memory.writePointer(vtable.add(2 * pointerSize), onVisit);
+
+      this.handle = visitor;
+      this._onVisit = onVisit;
+    }
+  }
+
+  class ArtClassLoaderVisitor {
+    constructor (visit) {
+      const visitor = Memory.alloc(4 * pointerSize);
+
+      const vtable = visitor.add(pointerSize);
+      Memory.writePointer(visitor, vtable);
+
+      const onVisit = new NativeCallback((self, klass) => {
+        visit(klass);
+      }, 'void', ['pointer', 'pointer']);
       Memory.writePointer(vtable.add(2 * pointerSize), onVisit);
 
       this.handle = visitor;
@@ -123,6 +200,38 @@ function Runtime () {
       });
     } finally {
       classHandles.forEach(handle => {
+        env.deleteGlobalRef(handle);
+      });
+    }
+
+    callbacks.onComplete();
+  }
+
+  function enumerateClassLoadersArt (callbacks) {
+    const env = vm.getEnv();
+
+    const ClassLoader = classFactory.use('java.lang.ClassLoader');
+
+    const loaderHandles = [];
+    const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
+    const vmHandle = api.vm;
+    const threadHandle = Memory.readPointer(env.handle.add(pointerSize));
+    const collectLoaderHandles = new ArtClassLoaderVisitor(loader => {
+      loaderHandles.push(addGlobalReference(vmHandle, threadHandle, loader));
+      return true;
+    });
+
+    withAllArtThreadsSuspended(() => {
+      api['art::ClassLinker::VisitClassLoaders'](api.artClassLinker, collectLoaderHandles);
+    });
+
+    try {
+      loaderHandles.forEach(handle => {
+        const loader = classFactory.cast(handle, ClassLoader);
+        callbacks.onMatch(loader);
+      });
+    } finally {
+      loaderHandles.forEach(handle => {
         env.deleteGlobalRef(handle);
       });
     }
@@ -163,36 +272,6 @@ function Runtime () {
     }
     callbacks.onComplete();
   }
-
-  Object.defineProperty(this, 'enumerateLoadedClassesSync', {
-    enumerable: true,
-    value: function () {
-      assertJavaApiIsAvailable();
-
-      const classes = [];
-      this.enumerateLoadedClasses({
-        onMatch(c) {
-          classes.push(c);
-        },
-        onComplete() {
-        }
-      });
-      return classes;
-    }
-  });
-
-  Object.defineProperty(this, 'enumerateLoadedClasses', {
-    enumerable: true,
-    value: function (callbacks) {
-      assertJavaApiIsAvailable();
-
-      if (api.flavor === 'art') {
-        enumerateLoadedClassesArt(callbacks);
-      } else {
-        enumerateLoadedClassesDalvik(callbacks);
-      }
-    }
-  });
 
   this.scheduleOnMainThread = function (fn) {
     assertCalledInJavaPerformCallback();
