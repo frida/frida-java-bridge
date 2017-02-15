@@ -19,6 +19,7 @@ const pointerSize = Process.pointerSize;
 
 function Runtime () {
   let api = null;
+  let apiError = null;
   let vm = null;
   let classFactory = null;
   let pending = [];
@@ -26,7 +27,11 @@ function Runtime () {
   let cachedIsAppProcess = null;
 
   function initialize () {
-    api = getApi();
+    try {
+      api = getApi();
+    } catch (e) {
+      apiError = e;
+    }
     if (api !== null) {
       vm = new VM(api);
       classFactory = new ClassFactory(vm);
@@ -58,9 +63,15 @@ function Runtime () {
   });
 
   function assertJavaApiIsAvailable () {
-    if (api === null) {
-      throw new Error('Java API not available');
+    if (api !== null) {
+      return;
     }
+
+    if (apiError !== null) {
+      throw apiError;
+    }
+
+    throw new Error('Java API not available');
   }
 
   function assertCalledInJavaPerformCallback () {
