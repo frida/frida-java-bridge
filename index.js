@@ -3,7 +3,10 @@
 /* global console, Memory, Module, NativePointer, NativeFunction, ptr, WeakRef, NULL */
 
 const getApi = require('./lib/api');
-const {getAndroidVersion} = require('./lib/android');
+const {
+  getAndroidVersion,
+  withAllArtThreadsSuspended,
+} = require('./lib/android');
 const ClassFactory = require('./lib/class-factory');
 const Env = require('./lib/env');
 const VM = require('./lib/vm');
@@ -237,17 +240,6 @@ function Runtime () {
     }
 
     callbacks.onComplete();
-  }
-
-  function withAllArtThreadsSuspended (fn) {
-    const scope = Memory.alloc(pointerSize);
-    const longSuspend = false;
-    api['art::ScopedSuspendAll::ScopedSuspendAll'](scope, Memory.allocUtf8String('frida'), longSuspend ? 1 : 0);
-    try {
-      fn();
-    } finally {
-      api['art::ScopedSuspendAll::~ScopedSuspendAll'](scope);
-    }
   }
 
   function enumerateLoadedClassesDalvik (callbacks) {
