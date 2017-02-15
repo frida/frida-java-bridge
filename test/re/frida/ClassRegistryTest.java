@@ -38,6 +38,27 @@ public class ClassRegistryTest {
         assertEquals("count > 0", script.getNextMessage());
     }
 
+    private UniqueBadger badger = null;
+
+    @Test
+    public void liveObjectsCanBeEnumerated() {
+        badger = new UniqueBadger("Joe");
+        loadScript("var count = 0;" +
+                "var name = null;" +
+                "Java.choose('re.frida.UniqueBadger', {" +
+                "  onMatch: function (entry) {" +
+                "    count++;" +
+                "    name = entry.name.value;" +
+                "  }," +
+                "  onComplete: function () {" +
+                "    send('count=' + count);" +
+                "    send('name=' + name);" +
+                "  }" +
+                "});");
+        assertEquals("count=1", script.getNextMessage());
+        assertEquals("name=Joe", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
@@ -56,5 +77,13 @@ public class ClassRegistryTest {
             script.close();
             script = null;
         }
+    }
+}
+
+class UniqueBadger {
+    public String name;
+
+    public UniqueBadger(String name) {
+        this.name = name;
     }
 }
