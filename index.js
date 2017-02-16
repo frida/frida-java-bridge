@@ -6,6 +6,8 @@ const getApi = require('./lib/api');
 const {
   getAndroidVersion,
   withAllArtThreadsSuspended,
+  makeArtClassVisitor,
+  makeArtClassLoaderVisitor,
 } = require('./lib/android');
 const ClassFactory = require('./lib/class-factory');
 const Env = require('./lib/env');
@@ -157,40 +159,6 @@ function Runtime () {
     }
   });
 
-  class ArtClassVisitor {
-    constructor (visit) {
-      const visitor = Memory.alloc(4 * pointerSize);
-
-      const vtable = visitor.add(pointerSize);
-      Memory.writePointer(visitor, vtable);
-
-      const onVisit = new NativeCallback((self, klass) => {
-        return visit(klass) === true ? 1 : 0;
-      }, 'bool', ['pointer', 'pointer']);
-      Memory.writePointer(vtable.add(2 * pointerSize), onVisit);
-
-      this.handle = visitor;
-      this._onVisit = onVisit;
-    }
-  }
-
-  class ArtClassLoaderVisitor {
-    constructor (visit) {
-      const visitor = Memory.alloc(4 * pointerSize);
-
-      const vtable = visitor.add(pointerSize);
-      Memory.writePointer(visitor, vtable);
-
-      const onVisit = new NativeCallback((self, klass) => {
-        visit(klass);
-      }, 'void', ['pointer', 'pointer']);
-      Memory.writePointer(vtable.add(2 * pointerSize), onVisit);
-
-      this.handle = visitor;
-      this._onVisit = onVisit;
-    }
-  }
-
   function enumerateLoadedClassesArt (callbacks) {
     const env = vm.getEnv();
 
@@ -198,7 +166,7 @@ function Runtime () {
     const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
     const vmHandle = api.vm;
     const threadHandle = Memory.readPointer(env.handle.add(pointerSize));
-    const collectClassHandles = new ArtClassVisitor(klass => {
+    const collectClassHandles = makeArtClassVisitor(klass => {
       classHandles.push(addGlobalReference(vmHandle, threadHandle, klass));
       return true;
     });
@@ -235,13 +203,13 @@ function Runtime () {
     const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
     const vmHandle = api.vm;
     const threadHandle = Memory.readPointer(env.handle.add(pointerSize));
-    const collectLoaderHandles = new ArtClassLoaderVisitor(loader => {
+    const collectLoaderHandles = makeArtClassLoaderVisitor(loader => {
       loaderHandles.push(addGlobalReference(vmHandle, threadHandle, loader));
       return true;
     });
 
     withAllArtThreadsSuspended(() => {
-      api['art::ClassLinker::VisitClassLoaders'](api.artClassLinker, collectLoaderHandles);
+      visitClassLoaders(api.artClassLinker, collectLoaderHandles);
     });
 
     try {
