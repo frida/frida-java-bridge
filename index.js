@@ -222,6 +222,11 @@ function Runtime () {
   }
 
   function enumerateClassLoadersArt (callbacks) {
+    const visitClassLoaders = api['art::ClassLinker::VisitClassLoaders'];
+    if (visitClassLoaders === undefined) {
+      throw new Error('This API is only available on Nougat and above');
+    }
+
     const env = vm.getEnv();
 
     const ClassLoader = classFactory.use('java.lang.ClassLoader');

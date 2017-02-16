@@ -26,6 +26,10 @@ public class ClassRegistryTest {
 
     @Test
     public void classLoadersCanBeEnumerated() {
+        if (android.os.Build.VERSION.SDK_INT < 24) {
+            return;
+        }
+
         loadScript("var count = 0;" +
                 "Java.enumerateClassLoaders({" +
                 "  onMatch: function (loader) {" +
