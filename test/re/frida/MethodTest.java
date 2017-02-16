@@ -80,7 +80,7 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    // @Test
+    @Test
     public void genericReturnBadger() {
         loadScript("var C = Java.use('re.frida.Badger');" +
                 "try {" +
