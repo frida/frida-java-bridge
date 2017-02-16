@@ -1,13 +1,11 @@
 'use strict';
 
-/* global console, Memory, Module, NativePointer, NativeFunction, ptr, WeakRef, NULL */
-
 const getApi = require('./lib/api');
 const {
   getAndroidVersion,
   withAllArtThreadsSuspended,
   makeArtClassVisitor,
-  makeArtClassLoaderVisitor,
+  makeArtClassLoaderVisitor
 } = require('./lib/android');
 const ClassFactory = require('./lib/class-factory');
 const Env = require('./lib/env');
@@ -119,10 +117,10 @@ function Runtime () {
 
       const classes = [];
       this.enumerateLoadedClasses({
-        onMatch(c) {
+        onMatch (c) {
           classes.push(c);
         },
-        onComplete() {
+        onComplete () {
         }
       });
       return classes;
@@ -149,10 +147,10 @@ function Runtime () {
 
       const loaders = [];
       this.enumerateClassLoaders({
-        onMatch(c) {
+        onMatch (c) {
           loaders.push(c);
         },
-        onComplete() {
+        onComplete () {
         }
       });
       return loaders;
@@ -418,3 +416,5 @@ function Runtime () {
 }
 
 module.exports = new Runtime();
+
+/* global console, Memory, Module, NativePointer, NativeFunction, ptr, Process, WeakRef */
