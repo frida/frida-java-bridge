@@ -5,13 +5,10 @@ import static org.junit.Assert.assertEquals;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
-import static org.junit.Assert.assertNull;
 import org.junit.rules.ExpectedException;
 
 import javax.crypto.Cipher;
 import java.io.IOException;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
 
 public class MethodTest {
     @Rule
@@ -80,60 +77,6 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    @Test
-    public void genericReturnBadger() {
-        loadScript("var C = Java.use('re.frida.Badger');" +
-                "try {" +
-                "  var method1 = C.forName;" +
-                "  method1.implementation = function () {" +
-                "    return method1.call(this);" +
-                "  };" +
-                "  var d = C.forName();" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('forName failed. ' + e);" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
-    // this one still just producing
-    // Error: access violation accessing 0xf2b295fe
-    // @Test
-    public void nativeReturnGenericVmStack() {
-        loadScript(
-                "try {" +
-                "  var C = Java.use('dalvik.system.VMStack');" +
-                "  var method1 = C.getStackClass2;" +
-                "  method1.implementation = function () {" +
-                "    return method1.call(this);" +
-                "  };" +
-                "  var stack = C.getStackClass2();" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('nativeReturnGeneric: ' + e);" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
-    // this one still just producing
-    // Error: access violation accessing 0x2133c66a
-    // @Test
-    public void nativeReturnGenericBadgerWrapperAroundJavaLangClass() {
-        loadScript(
-                "try {" +
-                "  var C = Java.use('re.frida.Badger');" +
-                "  var method1 = C.forNameYo;" +
-                "  method1.implementation = function () {" +
-                "    return method1.call(this);" +
-                "  };" +
-                "  var test = C.forNameYo('re.frida.Badger', false, null);" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('nativeReturnGeneric: ' + e);" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
     // this one was just hanging indefinitely during the test, but in an actual app, it was crashing
     //! either one of those is bad.
     // @Test
@@ -194,24 +137,6 @@ public class MethodTest {
     }
 
     @Test
-    public void constructorReturnsCorrectType() {
-        loadScript("var C = Java.use('javax.crypto.spec.SecretKeySpec');" +
-                "try {" +
-                "  var method1 = C.$init.overload('[B', 'java.lang.String');" +
-                "  method1.implementation = function (a, b) {" +
-                "    return method1.call(this, a, b);" +
-                "  };" +
-
-                // now look up the function again and call it
-                "  var testConstructor = C.$new([1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], 'AES');" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('SecretKeySpec: ' + e);" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
-    // @Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
                 "send('' + Cipher.ENCRYPT_MODE.value);");
@@ -246,10 +171,6 @@ class Badger {
 
     static Class<?> forName() {
         return Badger.class;
-    }
-
-    public static Class<?> forNameYo(String className, boolean shouldInitialize, ClassLoader classLoader) throws ClassNotFoundException {
-        return java.lang.Class.forName(className, shouldInitialize, classLoader);
     }
 
     public int returnZero() {
