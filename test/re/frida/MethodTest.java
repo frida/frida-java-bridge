@@ -77,65 +77,6 @@ public class MethodTest {
         assertEquals("ok", script.getNextMessage());
     }
 
-    // this one was just hanging indefinitely during the test, but in an actual app, it was crashing
-    //! either one of those is bad.
-    // @Test
-    public void methodInvoke() {
-        loadScript("var C = Java.use('java.lang.reflect.Method');" +
-                "var C2 = Java.use('java.lang.Class');" +
-                "try {" +
-                // hook the original
-                "  var method1 = C.invoke;" +
-                "  method1.implementation = function () {" +
-                "    return method1.apply(this, arguments);" +
-                "  };" +
-
-                // now call it and see what happens
-                "  var cl = C2.forName('re.frida.Badger');" +
-                "  var method2 = cl.getMethod('returnZero', 'int');" +
-                "  var ret = method2.invoke();" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('Method.invoke: ' + e);" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
-    // @Test
-    public void loadWorks() {
-        loadScript("var C = Java.use('java.lang.System');" +
-                "try {" +
-                "  var method1 = C.load;" +
-                "  method1.implementation = function (s) {" +
-                "    return method1.call(this, s);" +
-                "  };" +
-                "  C.load('/system/lib/libc.so');" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('System.load: ' + e);" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
-    // @Test
-    public void runtimeLoadLibrary() {
-        loadScript("var C = Java.use('java.lang.Runtime');" +
-                "try {" +
-                "  var method1 = C.loadLibrary.overload('java.lang.String');" +
-                "  method1.implementation = function (s) {" +
-                "    return method1.call(this, s);" +
-                "  };" +
-
-                // now look up the function again and call it
-                "  var now = C.loadLibrary.overload('java.lang.String');" +
-                "  now.call(C, '/system/lib/libc.so');" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('Runtime.loadLibrary: ' + e);" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
     @Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
