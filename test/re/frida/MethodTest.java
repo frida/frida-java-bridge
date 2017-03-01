@@ -70,7 +70,7 @@ public class MethodTest {
     public void fieldsThatCollideWithMethodsGetSuffixed() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
                 "var collider = Collider.$new();" +
-                "send(collider._Particle);");
+                "send(collider._particle);");
         assertEquals("1", script.getNextMessage());
     }
 
@@ -78,7 +78,7 @@ public class MethodTest {
     public void methodsThatCollideWithFieldsKeepName() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
                 "var collider = Collider.$new();" +
-                "send(collider.Particle());");
+                "send(collider.particle());");
         assertEquals("3", script.getNextMessage());
     }
 
@@ -86,7 +86,7 @@ public class MethodTest {
     public void fieldsThatCollideWithMethodsGetSuffixed2() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
                 "var collider = Collider.$new();" +
-                "send(collider._Particle2);");
+                "send(collider._particle2);");
         assertEquals("2", script.getNextMessage());
     }
 
@@ -94,31 +94,31 @@ public class MethodTest {
     public void methodsThatCollideWithFieldsKeepName2() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
                 "var collider = Collider.$new();" +
-                "send(collider.Particle2());");
+                "send(collider.particle2());");
         assertEquals("4", script.getNextMessage());
     }
 
     @Test
     public void collidedMethodsFieldsCanStillBeInstrumented() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
-                "Collider._Particle.implementation = function () {" +
+                "Collider._particle.implementation = function () {" +
                     "return 11;" +
                 "};" +
-                "Collider._Particle2.implementation = function () {" +
+                "Collider._particle2.implementation = function () {" +
                     "return 22;" +
                 "};" +
-                "Collider.Particle.implementation = function () {" +
+                "Collider.particle.implementation = function () {" +
                     "return 33;" +
                 "};" +
-                "Collider.Particle2.implementation = function () {" +
+                "Collider.particle2.implementation = function () {" +
                     "return 44;" +
                 "};");
 
         Collider collider = new Collider();
-        assertEquals(11, Collider.Particle);
-        assertEquals(22, collider.Particle2);
-        assertEquals(33, collider.Particle());
-        assertEquals(44, Collider.Particle2());
+        assertEquals(11, Collider.particle);
+        assertEquals(22, collider.particle2);
+        assertEquals(33, collider.particle());
+        assertEquals(44, Collider.particle2());
     }
 
     // @Test
@@ -176,15 +176,15 @@ class Badger {
 }
 
 class Collider {
-    static int Particle = 1;
+    static int particle = 1;
     
-    int Particle2 = 2;
+    int particle2 = 2;
 
-    int Particle() {
+    int particle() {
         return 3;
     }
 
-    static int Particle2(){
+    static int particle2(){
         return 4;
     }
 }
