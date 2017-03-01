@@ -65,7 +65,6 @@ public class MethodTest {
         assertEquals("Badger", script.getNextMessage());
     }
 
-
     @Test
     public void fieldsThatCollideWithMethodsGetSuffixed() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
@@ -177,14 +176,13 @@ class Badger {
 
 class Collider {
     static int particle = 1;
-    
     int particle2 = 2;
 
     int particle() {
         return 3;
     }
 
-    static int particle2(){
+    static int particle2() {
         return 4;
     }
 }
