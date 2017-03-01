@@ -32,8 +32,11 @@ struct _DestroyScriptOperation
 };
 
 static void frida_java_init_vm (JavaVM ** vm, JNIEnv ** env);
+static void frida_java_register_test_runner_api (JNIEnv * env);
 static void frida_java_register_script_api (JNIEnv * env);
 static JNIEnv * frida_java_get_env (void);
+
+static void re_frida_test_runner_register_class_loader (JNIEnv * env, jclass klass, jobject loader);
 
 static jlong re_frida_script_create (JNIEnv * env, jobject self, jstring source_code);
 static gboolean create_script_on_js_thread (gpointer user_data);
@@ -48,6 +51,11 @@ static void destroy_weak_ref (jweak ref);
 
 static guint get_system_api_level (void);
 
+static const JNINativeMethod re_frida_test_runner_methods[] =
+{
+  { "registerClassLoader", "(Ljava/lang/ClassLoader;)V", re_frida_test_runner_register_class_loader },
+};
+
 static const JNINativeMethod re_frida_script_methods[] =
 {
   { "create", "(Ljava/lang/String;)J", re_frida_script_create },
@@ -57,6 +65,8 @@ static const JNINativeMethod re_frida_script_methods[] =
 static JavaVM * java_vm;
 static GumScriptBackend * js_backend;
 static GMainContext * js_context;
+
+static jobject re_frida_test_runner_class_loader;
 
 static jmethodID re_frida_script_on_message_method;
 
@@ -81,6 +91,7 @@ main (int argc, char * argv[])
   frida_java_init_vm (&vm, &env);
   java_vm = vm;
 
+  frida_java_register_test_runner_api (env);
   frida_java_register_script_api (env);
 
   (*env)->PushLocalFrame (env, 6);
@@ -88,7 +99,7 @@ main (int argc, char * argv[])
   runner = (*env)->FindClass (env, "re/frida/TestRunner");
   g_assert (runner != NULL);
 
-  runner_main = (*env)->GetStaticMethodID (env, runner, "main", "([Ljava/lang/String;Ljava/lang/String;)V");
+  runner_main = (*env)->GetStaticMethodID (env, runner, "main", "([Ljava/lang/String;Ljava/lang/String;J)V");
   g_assert (runner_main != NULL);
 
   string = (*env)->FindClass (env, "java/lang/String");
@@ -108,7 +119,8 @@ main (int argc, char * argv[])
 
   data_dir_value = (*env)->NewStringUTF (env, FRIDA_JAVA_TESTS_DATA_DIR);
 
-  (*env)->CallStaticVoidMethod (env, runner, runner_main, argv_value, data_dir_value);
+  (*env)->CallStaticVoidMethod (env, runner, runner_main, argv_value, data_dir_value,
+      (jlong) &re_frida_test_runner_class_loader);
   if ((*env)->ExceptionCheck (env))
   {
     (*env)->ExceptionDescribe (env);
@@ -173,6 +185,21 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
 }
 
 static void
+frida_java_register_test_runner_api (JNIEnv * env)
+{
+  jclass runner;
+  jint result;
+
+  runner = (*env)->FindClass (env, "re/frida/TestRunner");
+  g_assert (runner != NULL);
+
+  result = (*env)->RegisterNatives (env, runner, re_frida_test_runner_methods, G_N_ELEMENTS (re_frida_test_runner_methods));
+  g_assert_cmpint (result, ==, 0);
+
+  (*env)->DeleteLocalRef (env, runner);
+}
+
+static void
 frida_java_register_script_api (JNIEnv * env)
 {
   jclass script;
@@ -206,6 +233,12 @@ frida_java_get_env (void)
   }
 
   return env;
+}
+
+static void
+re_frida_test_runner_register_class_loader (JNIEnv * env, jclass klass, jobject loader)
+{
+  re_frida_test_runner_class_loader = (*env)->NewGlobalRef (env, loader);
 }
 
 static jlong
