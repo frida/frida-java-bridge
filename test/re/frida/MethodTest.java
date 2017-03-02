@@ -65,6 +65,61 @@ public class MethodTest {
         assertEquals("Badger", script.getNextMessage());
     }
 
+    @Test
+    public void fieldsThatCollideWithMethodsGetSuffixed() {
+        loadScript("var Collider = Java.use('re.frida.Collider');" +
+                "var collider = Collider.$new();" +
+                "send(collider._particle);");
+        assertEquals("1", script.getNextMessage());
+    }
+
+    @Test
+    public void methodsThatCollideWithFieldsKeepName() {
+        loadScript("var Collider = Java.use('re.frida.Collider');" +
+                "var collider = Collider.$new();" +
+                "send(collider.particle());");
+        assertEquals("3", script.getNextMessage());
+    }
+
+    @Test
+    public void fieldsThatCollideWithMethodsGetSuffixed2() {
+        loadScript("var Collider = Java.use('re.frida.Collider');" +
+                "var collider = Collider.$new();" +
+                "send(collider._particle2);");
+        assertEquals("2", script.getNextMessage());
+    }
+
+    @Test
+    public void methodsThatCollideWithFieldsKeepName2() {
+        loadScript("var Collider = Java.use('re.frida.Collider');" +
+                "var collider = Collider.$new();" +
+                "send(collider.particle2());");
+        assertEquals("4", script.getNextMessage());
+    }
+
+    @Test
+    public void collidedMethodsFieldsCanStillBeInstrumented() {
+        loadScript("var Collider = Java.use('re.frida.Collider');" +
+                "Collider._particle.implementation = function () {" +
+                    "return 11;" +
+                "};" +
+                "Collider._particle2.implementation = function () {" +
+                    "return 22;" +
+                "};" +
+                "Collider.particle.implementation = function () {" +
+                    "return 33;" +
+                "};" +
+                "Collider.particle2.implementation = function () {" +
+                    "return 44;" +
+                "};");
+
+        Collider collider = new Collider();
+        assertEquals(11, Collider.particle);
+        assertEquals(22, collider.particle2);
+        assertEquals(33, collider.particle());
+        assertEquals(44, Collider.particle2());
+    }
+
     // @Test
     public void interfaceCanBeImplemented() {
         loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
@@ -116,5 +171,18 @@ class Badger {
 
     public int returnZero() {
         return 0;
+    }
+}
+
+class Collider {
+    static int particle = 1;
+    int particle2 = 2;
+
+    int particle() {
+        return 3;
+    }
+
+    static int particle2() {
+        return 4;
     }
 }
