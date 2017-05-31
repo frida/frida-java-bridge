@@ -323,7 +323,7 @@ function Runtime () {
         } catch (e) {
           setTimeout(() => { throw e; }, 0);
         }
-      } // XXX shift overhead?
+      }
     } finally {
       threadsInPerform--;
     }
