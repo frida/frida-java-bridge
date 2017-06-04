@@ -98,21 +98,6 @@ public class MethodTest {
     }
 
     @Test
-    public void collidedMethodsFieldsCanStillBeInstrumented() {
-        loadScript("var Collider = Java.use('re.frida.Collider');" +
-                "Collider.particle.implementation = function () {" +
-                    "return 33;" +
-                "};" +
-                "Collider.particle2.implementation = function () {" +
-                    "return 44;" +
-                "};");
-
-        Collider collider = new Collider();
-        assertEquals(33, collider.particle());
-        assertEquals(44, Collider.particle2());
-    }
-
-    @Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
                 "send('' + Cipher.ENCRYPT_MODE.value);");
