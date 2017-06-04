@@ -8,19 +8,26 @@ import org.junit.runner.JUnitCore;
 
 public class TestRunner {
     public static String fridaJavaBundle;
+    public static long classLoaderPointer;
 
     private static String dataDir;
 
-    public static void main(String[] args, String dataDir) {
+    public static void main(String[] args, String dataDir, long classLoaderPointer) {
         TestRunner.dataDir = dataDir;
+        TestRunner.classLoaderPointer = classLoaderPointer;
 
         TestRunner.fridaJavaBundle = slurp("frida-java.js");
 
+        registerClassLoader(TestRunner.class.getClassLoader());
+
         JUnitCore.main(
             "re.frida.ClassRegistryTest",
-            "re.frida.MethodTest"
+            "re.frida.MethodTest",
+            "re.frida.ClassCreationTest"
         );
     }
+
+    private static native void registerClassLoader(ClassLoader loader);
 
     public static String slurp(String name) {
         File file = new File(dataDir, name);

@@ -380,6 +380,10 @@ function Runtime () {
     return mainLooper.$isSameObject(myLooper);
   };
 
+  this.registerClass = function (spec) {
+    return classFactory.registerClass(spec);
+  };
+
   Object.defineProperty(this, 'vm', {
     enumerable: false,
     get: function () {
