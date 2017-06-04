@@ -112,18 +112,6 @@ public class MethodTest {
         assertEquals(44, Collider.particle2());
     }
 
-    // @Test
-    public void interfaceCanBeImplemented() {
-        loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
-                "try {" +
-                "  var tm = X509TrustManager.$new();" +
-                "  send('ok');" +
-                "} catch (e) {" +
-                "  send('couldnt create trustmanager');" +
-                "}");
-        assertEquals("ok", script.getNextMessage());
-    }
-
     @Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
