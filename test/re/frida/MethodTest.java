@@ -66,10 +66,10 @@ public class MethodTest {
     }
 
     @Test
-    public void fieldsThatCollideWithMethodsGetSuffixed() {
+    public void fieldsThatCollideWithMethodsGetPrefixed() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
                 "var collider = Collider.$new();" +
-                "send(collider._particle);");
+                "send(collider._particle.value);");
         assertEquals("1", script.getNextMessage());
     }
 
@@ -82,10 +82,10 @@ public class MethodTest {
     }
 
     @Test
-    public void fieldsThatCollideWithMethodsGetSuffixed2() {
+    public void fieldsThatCollideWithMethodsGetPrefixed2() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
                 "var collider = Collider.$new();" +
-                "send(collider._particle2);");
+                "send(collider._particle2.value);");
         assertEquals("2", script.getNextMessage());
     }
 
@@ -100,12 +100,6 @@ public class MethodTest {
     @Test
     public void collidedMethodsFieldsCanStillBeInstrumented() {
         loadScript("var Collider = Java.use('re.frida.Collider');" +
-                "Collider._particle.implementation = function () {" +
-                    "return 11;" +
-                "};" +
-                "Collider._particle2.implementation = function () {" +
-                    "return 22;" +
-                "};" +
                 "Collider.particle.implementation = function () {" +
                     "return 33;" +
                 "};" +
@@ -114,8 +108,6 @@ public class MethodTest {
                 "};");
 
         Collider collider = new Collider();
-        assertEquals(11, Collider.particle);
-        assertEquals(22, collider.particle2);
         assertEquals(33, collider.particle());
         assertEquals(44, Collider.particle2());
     }
