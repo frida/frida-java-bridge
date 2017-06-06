@@ -11,8 +11,26 @@ import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
 
 public class ClassCreationTest {
+    private static Object badgerObject = null;
     private static Class bananaClass = null;
     private static Class trustManagerClass = null;
+
+    // @Test
+    public void simpleClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        loadScript("var CustomBadger = Java.registerClass({" +
+                "  name: 're.frida.CustomBadger'," +
+                "  methods: {" +
+                "    getName: {" +
+                "      returnType: 'java.lang.String'," +
+                "      argumentTypes: []," +
+                "      implementation: function () {" +
+                "        return 'Fred';" +
+                "      }," +
+                "    }," +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').badgerObject.value = CustomBadger.$new();");
+    }
 
     @Test
     public void simpleInterfaceCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
