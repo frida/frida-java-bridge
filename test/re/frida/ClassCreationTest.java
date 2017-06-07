@@ -15,7 +15,7 @@ public class ClassCreationTest {
     private static Class bananaClass = null;
     private static Class trustManagerClass = null;
 
-    // @Test
+    @Test
     public void simpleClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         loadScript("var CustomBadger = Java.registerClass({" +
                 "  name: 're.frida.CustomBadger'," +
