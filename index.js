@@ -297,11 +297,14 @@ function Runtime () {
               performPending(); // already initialized, continue
             } else {
               const m = ActivityThread.getPackageInfoNoCheck;
+              let initialized = false;
               m.implementation = function () {
-                m.implementation = null;
                 const apk = m.apply(this, arguments);
-                classFactory.loader = apk.getClassLoader();
-                performPending();
+                if (!initialized) {
+                  initialized = true;
+                  classFactory.loader = apk.getClassLoader();
+                  performPending();
+                }
                 return apk;
               };
             }
