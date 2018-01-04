@@ -6,6 +6,8 @@ FRIDA_JAVA_TESTS_1.0 {
     InitializeSignalChain;
     EnsureFrontOfChain;
     SetSpecialSignalHandlerFn;
+    AddSpecialSignalHandlerFn;
+    RemoveSpecialSignalHandlerFn;
 
   local:
     *;

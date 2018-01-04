@@ -86,7 +86,7 @@ main (int argc, char * argv[])
   gum_init_embedded ();
 
   js_backend = gum_script_backend_obtain_v8 ();
-  js_context = gum_script_backend_get_main_context (js_backend);
+  js_context = gum_script_scheduler_get_js_context (gum_script_backend_get_scheduler (js_backend));
 
   frida_java_init_vm (&vm, &env);
   java_vm = vm;
@@ -465,4 +465,16 @@ void
 SetSpecialSignalHandlerFn (int signal, gpointer fn)
 {
   /* g_print ("SetSpecialSignalHandlerFn(signal=%d)\n", signal); */
+}
+
+void
+AddSpecialSignalHandlerFn (int signal, gpointer sa)
+{
+  /* g_print ("AddSpecialSignalHandlerFn(signal=%d)\n", signal); */
+}
+
+void
+RemoveSpecialSignalHandlerFn (int signal, bool (* fn) (int, siginfo_t *, void *))
+{
+  /* g_print ("RemoveSpecialSignalHandlerFn(signal=%d)\n", signal); */
 }

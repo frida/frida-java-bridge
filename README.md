@@ -7,14 +7,14 @@ through the global named `Java`.
 
 ### Dependencies
 
-- Android SDK Platform-Tools >= 25.0.3
-- Android NDK r13b
+- Android SDK Platform-Tools >= 27.0.1
+- Android NDK r15c
 
 With environment configured accordingly:
 
 ```sh
 $ export ANDROID_SDK_ROOT=~/Library/Android/sdk
-$ export ANDROID_NDK_ROOT=/usr/local/opt/android-ndk-r13b
+$ export ANDROID_NDK_ROOT=/usr/local/opt/android-ndk-r15c
 ```
 
 ### Run
