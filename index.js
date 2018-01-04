@@ -362,9 +362,14 @@ function Runtime () {
     return classFactory.openClassFile(filePath);
   };
 
-  this.choose = function (className, callbacks) {
+  this.choose = function (specifier, callbacks) {
     assertCalledInJavaPerformCallback();
-    return classFactory.choose(className, callbacks);
+    classFactory.choose(specifier, callbacks);
+  };
+
+  this.chooseSync = function (specifier) {
+    assertCalledInJavaPerformCallback();
+    return classFactory.chooseSync(specifier);
   };
 
   this.cast = function (obj, C) {
