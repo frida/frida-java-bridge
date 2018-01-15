@@ -74,6 +74,7 @@ int
 main (int argc, char * argv[])
 {
   gint result = 0;
+  GumScriptScheduler * js_scheduler;
   JavaVM * vm;
   JNIEnv * env;
   jclass runner;
@@ -86,7 +87,11 @@ main (int argc, char * argv[])
   gum_init_embedded ();
 
   js_backend = gum_script_backend_obtain_v8 ();
-  js_context = gum_script_scheduler_get_js_context (gum_script_backend_get_scheduler (js_backend));
+  js_scheduler = gum_script_backend_get_scheduler (js_backend);
+  js_context = gum_script_scheduler_get_js_context (js_scheduler);
+
+  gum_script_scheduler_enable_background_thread (js_scheduler);
+  gum_script_scheduler_start (js_scheduler);
 
   frida_java_init_vm (&vm, &env);
   java_vm = vm;
