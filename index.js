@@ -4,6 +4,7 @@ const getApi = require('./lib/api');
 const {
   getAndroidVersion,
   withAllArtThreadsSuspended,
+  withRunnableArtThread,
   makeArtClassVisitor,
   makeArtClassLoaderVisitor
 } = require('./lib/android');
@@ -163,14 +164,15 @@ function Runtime () {
     const classHandles = [];
     const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
     const vmHandle = api.vm;
-    const threadHandle = Memory.readPointer(env.handle.add(pointerSize));
-    const collectClassHandles = makeArtClassVisitor(klass => {
-      classHandles.push(addGlobalReference(vmHandle, threadHandle, klass));
-      return true;
-    });
+    withRunnableArtThread(vm, env, thread => {
+      const collectClassHandles = makeArtClassVisitor(klass => {
+        classHandles.push(addGlobalReference(vmHandle, thread, klass));
+        return true;
+      });
 
-    withAllArtThreadsSuspended(() => {
-      api['art::ClassLinker::VisitClasses'](api.artClassLinker, collectClassHandles);
+      withAllArtThreadsSuspended(() => {
+        api['art::ClassLinker::VisitClasses'](api.artClassLinker, collectClassHandles);
+      });
     });
 
     try {
@@ -200,14 +202,14 @@ function Runtime () {
     const loaderHandles = [];
     const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
     const vmHandle = api.vm;
-    const threadHandle = Memory.readPointer(env.handle.add(pointerSize));
-    const collectLoaderHandles = makeArtClassLoaderVisitor(loader => {
-      loaderHandles.push(addGlobalReference(vmHandle, threadHandle, loader));
-      return true;
-    });
-
-    withAllArtThreadsSuspended(() => {
-      visitClassLoaders(api.artClassLinker, collectLoaderHandles);
+    withRunnableArtThread(vm, env, thread => {
+      const collectLoaderHandles = makeArtClassLoaderVisitor(loader => {
+        loaderHandles.push(addGlobalReference(vmHandle, thread, loader));
+        return true;
+      });
+      withAllArtThreadsSuspended(() => {
+        visitClassLoaders(api.artClassLinker, collectLoaderHandles);
+      });
     });
 
     try {
