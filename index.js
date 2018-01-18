@@ -375,11 +375,6 @@ function Runtime () {
     classFactory.choose(specifier, callbacks);
   };
 
-  this.chooseSync = function (specifier) {
-    assertCalledInJavaPerformCallback();
-    return classFactory.chooseSync(specifier);
-  };
-
   this.cast = function (obj, C) {
     return classFactory.cast(obj, C);
   };
