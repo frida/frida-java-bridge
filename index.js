@@ -28,15 +28,27 @@ function Runtime () {
   let cachedIsAppProcess = null;
 
   function initialize () {
+    const api = tryGetApi();
+    if (api !== null) {
+      vm = new VM(api);
+      classFactory = new ClassFactory(vm);
+    }
+  }
+
+  function tryGetApi () {
+    if (api !== null) {
+      return api;
+    }
+    if (apiError !== null) {
+      throw apiError;
+    }
+
     try {
       api = getApi();
     } catch (e) {
       apiError = e;
     }
-    if (api !== null) {
-      vm = new VM(api);
-      classFactory = new ClassFactory(vm);
-    }
+    return api;
   }
 
   WeakRef.bind(Runtime, function dispose () {
@@ -52,7 +64,7 @@ function Runtime () {
   Object.defineProperty(this, 'available', {
     enumerable: true,
     get: function () {
-      return api !== null;
+      return tryGetApi() !== null;
     }
   });
 
@@ -63,17 +75,11 @@ function Runtime () {
     }
   });
 
-  function assertJavaApiIsAvailable () {
-    if (api !== null) {
-      return;
+  const assertJavaApiIsAvailable = () => {
+    if (!this.available) {
+      throw new Error('Java API not available');
     }
-
-    if (apiError !== null) {
-      throw apiError;
-    }
-
-    throw new Error('Java API not available');
-  }
+  };
 
   function assertCalledInJavaPerformCallback () {
     if (threadsInPerform === 0) {
