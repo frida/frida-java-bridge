@@ -8,7 +8,7 @@ android_sysroot := $(ANDROID_NDK_ROOT)/platforms/$(android_platform)/arch-$(ANDR
 deploy_prefix := /data/local/tmp
 deploy_data_dir := $(deploy_prefix)/frida-java-tests
 
-frida_version := 10.6.34
+frida_version := 10.6.37
 
 test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
