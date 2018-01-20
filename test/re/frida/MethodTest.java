@@ -15,6 +15,21 @@ public class MethodTest {
     public final ExpectedException thrown = ExpectedException.none();
 
     @Test
+    public void overloadCanBeSpecified() {
+        loadScript("var Overloader = Java.use('re.frida.Overloader');" +
+                "var overloader = Overloader.$new();" +
+                "send(overloader.frobnicate());" +
+                "send(overloader.frobnicate(1));" +
+                "var frobnicate = overloader.frobnicate;" +
+                "send(frobnicate.overload().call(overloader));" +
+                "send(frobnicate.overload('int').call(overloader, 2));");
+        assertEquals("13", script.getNextMessage());
+        assertEquals("37", script.getNextMessage());
+        assertEquals("13", script.getNextMessage());
+        assertEquals("74", script.getNextMessage());
+    }
+
+    @Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -122,6 +137,16 @@ public class MethodTest {
             script.close();
             script = null;
         }
+    }
+}
+
+class Overloader {
+    int frobnicate() {
+        return 13;
+    }
+
+    int frobnicate(int factor) {
+        return factor * 37;
     }
 }
 
