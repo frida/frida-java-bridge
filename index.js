@@ -176,9 +176,7 @@ function Runtime () {
         return true;
       });
 
-      withAllArtThreadsSuspended(() => {
-        api['art::ClassLinker::VisitClasses'](api.artClassLinker, collectClassHandles);
-      });
+      api['art::ClassLinker::VisitClasses'](api.artClassLinker, collectClassHandles);
     });
 
     try {
