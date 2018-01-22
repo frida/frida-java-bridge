@@ -26,7 +26,7 @@ deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java.js
 	adb push $^ $(deploy_data_dir)
 
 run:
-	adb shell "ANDROID_DATA=$(deploy_data_dir) $(deploy_data_dir)/runner"
+	adb shell "$(deploy_data_dir)/runner"
 
 watch:
 	npm run watch &
