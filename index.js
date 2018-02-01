@@ -377,6 +377,10 @@ function Runtime () {
     return classFactory.cast(obj, C);
   };
 
+  this.array = function (type, elements) {
+    return classFactory.array(type, elements);
+  };
+
   // Reference: http://stackoverflow.com/questions/2848575/how-to-detect-ui-thread-on-android
   this.isMainThread = function () {
     assertCalledInJavaPerformCallback();

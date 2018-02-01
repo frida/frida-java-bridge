@@ -30,6 +30,72 @@ public class MethodTest {
     }
 
     @Test
+    public void primitiveArrayCanBeReturned() {
+        loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
+                "var buffinator = Buffinator.$new();" +
+                "var pending = buffinator.getPending();" +
+                "send(pending.length);" +
+                "send(pending[0]);" +
+                "send(pending[1]);" +
+                "send(typeof pending[2]);");
+        assertEquals("2", script.getNextMessage());
+        assertEquals("13", script.getNextMessage());
+        assertEquals("37", script.getNextMessage());
+        assertEquals("undefined", script.getNextMessage());
+    }
+
+    @Test
+    public void primitiveArrayCanBePassed() {
+        loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
+                "var buffinator = Buffinator.$new();" +
+                "send(buffinator.sum([ 3, 7, 2 ]));");
+        assertEquals("12", script.getNextMessage());
+    }
+
+    @Test
+    public void primitiveArrayCanBeModified() {
+        loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
+                "var buffinator = Buffinator.$new();" +
+                "var buffer = Java.array('int', [ 1003, 1005, 1007 ]);" +
+                "send(buffer.length);" +
+                "send(buffer[0]);" +
+                "send(buffer[1]);" +
+                "send(buffer[2]);" +
+                "buffer[2] = 9000;" +
+                "send(buffer[2]);" +
+                "buffinator.bump(buffer);" +
+                "send(buffer[0]);" +
+                "send(buffer[1]);" +
+                "send(buffer[2]);");
+        assertEquals("3", script.getNextMessage());
+        assertEquals("1003", script.getNextMessage());
+        assertEquals("1005", script.getNextMessage());
+        assertEquals("1007", script.getNextMessage());
+        assertEquals("9000", script.getNextMessage());
+        assertEquals("2003", script.getNextMessage());
+        assertEquals("2005", script.getNextMessage());
+        assertEquals("10000", script.getNextMessage());
+    }
+
+    @Test
+    public void primitiveArrayOwnKeysCanBeQueried() {
+        loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
+                "var buffinator = Buffinator.$new();" +
+                "var buffer = Java.array('int', [ 13, 37 ]);" +
+                "send(Object.getOwnPropertyNames(buffer));");
+        assertEquals("[\"$handle\",\"length\",\"0\",\"1\"]", script.getNextMessage());
+    }
+
+    @Test
+    public void primitiveArrayCanBeSerializedToJson() {
+        loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
+                "var buffinator = Buffinator.$new();" +
+                "var buffer = Java.array('int', [ 13, 37 ]);" +
+                "send(buffer);");
+        assertEquals("[13,37]", script.getNextMessage());
+    }
+
+    @Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -141,21 +207,41 @@ public class MethodTest {
 }
 
 class Overloader {
-    int frobnicate() {
+    public int frobnicate() {
         return 13;
     }
 
-    int frobnicate(int factor) {
+    public int frobnicate(int factor) {
         return factor * 37;
     }
 }
 
+class Buffinator {
+    public byte[] getPending() {
+        return new byte[] { 13, 37 };
+    }
+
+    public int sum(byte[] values) {
+        int result = 0;
+        for (byte value : values) {
+            result += value;
+        }
+        return result;
+    }
+
+    public void bump(int[] values) {
+        for (int i = 0; i != values.length; i++) {
+            values[i] += 1000;
+        }
+    }
+}
+
 class Badger {
-    void die() {
+    public void die() {
         throw new IllegalStateException("Already dead");
     }
 
-    static Class<?> forName() {
+    public static Class<?> forName() {
         return Badger.class;
     }
 
@@ -165,14 +251,14 @@ class Badger {
 }
 
 class Collider {
-    static int particle = 1;
-    int particle2 = 2;
+    public static int particle = 1;
+    public int particle2 = 2;
 
-    int particle() {
+    public int particle() {
         return 3;
     }
 
-    static int particle2() {
+    public static int particle2() {
         return 4;
     }
 }
