@@ -83,7 +83,7 @@ public class MethodTest {
                 "var buffinator = Buffinator.$new();" +
                 "var buffer = Java.array('int', [ 13, 37 ]);" +
                 "send(Object.getOwnPropertyNames(buffer));");
-        assertEquals("[\"$handle\",\"length\",\"0\",\"1\"]", script.getNextMessage());
+        assertEquals("[\"$handle\",\"type\",\"length\",\"0\",\"1\"]", script.getNextMessage());
     }
 
     @Test
