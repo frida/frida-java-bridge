@@ -138,10 +138,12 @@ public class MethodTest {
     }
 
     @Test
-    public void passingStringFromReplacementWorksWhenExceptionIsThrown() {
+    public void passingJSStringToReplacementThatThrowsShouldNotCrash() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "var IllegalStateException = Java.use('java.lang.IllegalStateException');" +
+                "var error = IllegalStateException.$new('Already dead: w00t');" +
                 "Badger.dieWithMessage.implementation = function (message) {" +
-                    "this.dieWithMessage(message);" +
+                    "throw error;" +
                 "};" +
                 "var b = Badger.$new();" +
                 "try {" +
