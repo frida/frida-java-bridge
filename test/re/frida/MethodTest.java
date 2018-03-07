@@ -138,6 +138,20 @@ public class MethodTest {
     }
 
     @Test
+    public void passingStringFromReplacementWorksWhenExceptionIsThrown() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.dieWithMessage.implementation = function (message) {" +
+                    "this.dieWithMessage(message);" +
+                "};" +
+                "var b = Badger.$new();" +
+                "try {" +
+                    "b.dieWithMessage('w00t');" +
+                "} catch (e) {" +
+                    "send(e.message);" +
+                "}");
+        assertEquals("java.lang.IllegalStateException: Already dead: w00t", script.getNextMessage());
+    }
+
     public void genericsCanBeUsed() {
         loadScript("var ArrayList = Java.use('java.util.ArrayList');" +
                 "var items = ArrayList.$new();" +
@@ -239,6 +253,10 @@ class Buffinator {
 class Badger {
     public void die() {
         throw new IllegalStateException("Already dead");
+    }
+
+    public void dieWithMessage(String message) {
+        throw new IllegalStateException("Already dead: " + message);
     }
 
     public static Class<?> forName() {
