@@ -19,6 +19,7 @@ const {
 const pointerSize = Process.pointerSize;
 
 function Runtime () {
+  let initialized = false;
   let api = null;
   let apiError = null;
   let vm = null;
@@ -27,18 +28,11 @@ function Runtime () {
   let threadsInPerform = 0;
   let cachedIsAppProcess = null;
 
-  function initialize () {
-    const api = tryGetApi();
-    if (api !== null) {
-      vm = new VM(api);
-      classFactory = new ClassFactory(vm);
+  function tryInitialize () {
+    if (initialized) {
+      return true;
     }
-  }
 
-  function tryGetApi () {
-    if (api !== null) {
-      return api;
-    }
     if (apiError !== null) {
       throw apiError;
     }
@@ -47,8 +41,19 @@ function Runtime () {
       api = getApi();
     } catch (e) {
       apiError = e;
+      throw e;
     }
-    return api;
+
+    if (api === null) {
+      return false;
+    }
+
+    vm = new VM(api);
+    classFactory = new ClassFactory(vm);
+
+    initialized = true;
+
+    return true;
   }
 
   WeakRef.bind(Runtime, function dispose () {
@@ -64,7 +69,7 @@ function Runtime () {
   Object.defineProperty(this, 'available', {
     enumerable: true,
     get: function () {
-      return tryGetApi() !== null;
+      return tryInitialize();
     }
   });
 
@@ -429,7 +434,7 @@ function Runtime () {
     return cachedIsAppProcess[0];
   }
 
-  initialize.call(this);
+  tryInitialize();
 }
 
 module.exports = new Runtime();
