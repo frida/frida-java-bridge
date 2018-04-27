@@ -28,11 +28,7 @@ function Runtime () {
   let cachedIsAppProcess = null;
 
   function initialize () {
-    const api = tryGetApi();
-    if (api !== null) {
-      vm = new VM(api);
-      classFactory = new ClassFactory(vm);
-    }
+    tryGetApi();
   }
 
   function tryGetApi () {
@@ -45,6 +41,10 @@ function Runtime () {
 
     try {
       api = getApi();
+      if (api !== null) {
+        vm = new VM(api);
+        classFactory = new ClassFactory(vm);
+      }
     } catch (e) {
       apiError = e;
     }
