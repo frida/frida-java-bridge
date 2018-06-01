@@ -14,6 +14,7 @@ public class ClassCreationTest {
     private static Object badgerObject = null;
     private static Class bananaClass = null;
     private static Class trustManagerClass = null;
+    private static Class formatterClass = null;
 
     @Test
     public void simpleClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -75,6 +76,34 @@ public class ClassCreationTest {
         manager.checkClientTrusted(emptyChain, "RSA");
         manager.checkServerTrusted(emptyChain, "RSA");
         assertEquals(new X509Certificate[0], manager.getAcceptedIssuers());
+    }
+
+    @Test
+    public void overloadedInterfaceMethodsCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        loadScript("var Formatter = Java.use('re.frida.Formatter');" +
+                "var SimplerFormatter = Java.registerClass({" +
+                "  name: 're.frida.SimpleFormatter'," +
+                "  implements: [Formatter]," +
+                "  methods: {" +
+                "    format: [{" +
+                "      returnType: 'java.lang.String'," +
+                "      argumentTypes: ['int']," +
+                "      implementation: function (val) {" +
+                "        return typeof val + ': ' + val;" +
+                "      }" +
+                "    }, {" +
+                "      returnType: 'java.lang.String'," +
+                "      argumentTypes: ['java.lang.String']," +
+                "      implementation: function (val) {" +
+                "        return typeof val + ': \"' + val + '\"';" +
+                "      }" +
+                "    }]" +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').formatterClass.value = SimplerFormatter.class;");
+        Formatter formatter = (Formatter) formatterClass.newInstance();
+        assertEquals("number: 42", formatter.format(42));
+        assertEquals("string: \"Hello\"", formatter.format("Hello"));
     }
 
     private Script script = null;
