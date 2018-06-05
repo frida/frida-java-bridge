@@ -85,6 +85,7 @@ build/tests.jar: $(test_sources) build/junit.jar build/hamcrest.jar
 		-bootclasspath $(android_jar) \
 		-source 1.7 \
 		-target 1.7 \
+		-Xlint:deprecation \
 		$(test_sources) \
 		-d build/java/
 	jar cfe $@ re.frida.tests.Runner -C build/java .
