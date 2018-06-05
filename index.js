@@ -305,15 +305,17 @@ function Runtime () {
             const app = ActivityThread.currentApplication();
             if (app !== null) {
               classFactory.loader = app.getClassLoader();
+              classFactory.cacheDir = app.getCacheDir().getCanonicalPath();
               performPending(); // already initialized, continue
             } else {
               const m = ActivityThread.getPackageInfoNoCheck;
               let initialized = false;
-              m.implementation = function () {
+              m.implementation = function (appInfo) {
                 const apk = m.apply(this, arguments);
                 if (!initialized) {
                   initialized = true;
                   classFactory.loader = apk.getClassLoader();
+                  classFactory.cacheDir = classFactory.use('java.io.File').$new(appInfo.dataDir.value + '/cache').getCanonicalPath();
                   performPending();
                 }
                 return apk;
