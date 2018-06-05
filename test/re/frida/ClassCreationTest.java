@@ -6,6 +6,8 @@ import org.junit.After;
 import org.junit.Test;
 
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import javax.net.ssl.X509TrustManager;
@@ -15,6 +17,7 @@ public class ClassCreationTest {
     private static Class bananaClass = null;
     private static Class trustManagerClass = null;
     private static Class formatterClass = null;
+    private static Class weirdTrustManagerClass = null;
 
     @Test
     public void simpleClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -104,6 +107,58 @@ public class ClassCreationTest {
         Formatter formatter = (Formatter) formatterClass.newInstance();
         assertEquals("number: 42", formatter.format(42));
         assertEquals("string: \"Hello\"", formatter.format("Hello"));
+    }
+
+    @Test
+    public void interfaceMethodCanHaveUnrelatedOverload() throws ClassNotFoundException, InstantiationException,
+           IllegalAccessException, CertificateException, NoSuchMethodException, InvocationTargetException {
+        loadScript("var X509TrustManager = Java.use('javax.net.ssl.X509TrustManager');" +
+                "var MyWeirdTrustManager = Java.registerClass({" +
+                "  name: 'com.example.MyWeirdTrustManager'," +
+                "  implements: [X509TrustManager]," +
+                "  methods: {" +
+                "    checkClientTrusted: function (chain, authType) {" +
+                "      send('checkClientTrusted');" +
+                "    }," +
+                "    checkServerTrusted: [{" +
+                "      returnType: 'void'," +
+                "      argumentTypes: ['[Ljava.security.cert.X509Certificate;', 'java.lang.String']," +
+                "      implementation: function (chain, authType) {" +
+                "        send('checkServerTrusted A');" +
+                "      }" +
+                "    }, {" +
+                "      returnType: 'java.util.List'," +
+                "      argumentTypes: ['[Ljava.security.cert.X509Certificate;', 'java.lang.String', 'java.lang.String']," +
+                "      implementation: function (chain, authType, host) {" +
+                "        send('checkServerTrusted B');" +
+                "        return null;" +
+                "      }" +
+                "    }]," +
+                "    getAcceptedIssuers: function () {" +
+                "      send('getAcceptedIssuers');" +
+                "      return [];" +
+                "    }," +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').weirdTrustManagerClass.value = MyWeirdTrustManager.class;");
+        X509TrustManager manager = (X509TrustManager) weirdTrustManagerClass.newInstance();
+        X509Certificate[] emptyChain = new X509Certificate[0];
+
+        manager.checkClientTrusted(emptyChain, "RSA");
+        assertEquals("checkClientTrusted", script.getNextMessage());
+
+        manager.checkServerTrusted(emptyChain, "RSA");
+        assertEquals("checkServerTrusted A", script.getNextMessage());
+
+        assertEquals(0, manager.getAcceptedIssuers().length);
+        assertEquals("getAcceptedIssuers", script.getNextMessage());
+
+        Method checkServerTrusted = manager.getClass().getMethod("checkServerTrusted",
+            X509Certificate[].class,
+            String.class,
+            String.class);
+        checkServerTrusted.invoke(manager, emptyChain, "RSA", "foo.bar.com");
+        assertEquals("checkServerTrusted B", script.getNextMessage());
     }
 
     private Script script = null;
