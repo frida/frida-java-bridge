@@ -78,6 +78,14 @@ public class MethodTest {
     }
 
     @Test
+    public void primitiveArrayOverloadCanBeCalledImplicitly() {
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "var str = JString.$new(Java.array('byte', [ 0x48, 0x65, 0x69 ]));" +
+                "send(str.toString());");
+        assertEquals("Hei", script.getNextMessage());
+    }
+
+    @Test
     public void primitiveArrayOwnKeysCanBeQueried() {
         loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
                 "var buffinator = Buffinator.$new();" +
