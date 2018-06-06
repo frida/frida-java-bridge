@@ -78,7 +78,7 @@ public class ClassCreationTest {
         X509Certificate[] emptyChain = new X509Certificate[0];
         manager.checkClientTrusted(emptyChain, "RSA");
         manager.checkServerTrusted(emptyChain, "RSA");
-        assertEquals(new X509Certificate[0], manager.getAcceptedIssuers());
+        assertEquals(0, manager.getAcceptedIssuers().length);
     }
 
     @Test
