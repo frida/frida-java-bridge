@@ -3,6 +3,10 @@
   "version": "1.4.9",
   "description": "Java runtime interop from Frida",
   "main": "index.js",
+  "files": [
+    "index.js",
+    "lib/"
+  ],
   "browserify": {
     "transform": [
       [
