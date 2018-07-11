@@ -1,6 +1,7 @@
 package re.frida;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import org.junit.After;
 import org.junit.Rule;
@@ -209,6 +210,31 @@ public class MethodTest {
         assertEquals("" + Cipher.ENCRYPT_MODE, script.getNextMessage());
     }
 
+    @Test
+    public void replacementCanBeDoneOnReflection() {
+        loadScript("var classDef = Java.use('java.lang.Class');\n" +
+                   "var getMethod = classDef.getMethod.overload('java.lang.String',\n" +
+                                                               "'[Ljava.lang.Class;');\n" +
+                   "send('overload found');\n" + 
+                   "getMethod.implementation = function(name, array) {\n" +
+                       "var method = getMethod.call(this, name, array);\n" +
+                       "send(name + ' dereflected');\n" + 
+                       "return method;\n" +
+                   "}\n" +
+                   "send('implementation replaced');\n");
+        assertEquals("overload found", script.getNextMessage());
+        assertEquals("implementation replaced", script.getNextMessage());
+
+        Class reflector = Reflector.class;
+        java.lang.reflect.Method method;
+        try {
+            method = reflector.getMethod("reflected");
+            assertEquals("reflected dereflected", script.getNextMessage());
+        } catch (Exception e) {
+            fail(e.toString());
+        }
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
@@ -288,5 +314,10 @@ class Collider {
 
     public static int particle2() {
         return 4;
+    }
+}
+
+class Reflector {
+    public static void reflected() {
     }
 }
