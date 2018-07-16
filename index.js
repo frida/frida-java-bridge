@@ -25,7 +25,6 @@ function Runtime () {
   let vm = null;
   let classFactory = null;
   let pending = [];
-  let threadsInPerform = 0;
   let cachedIsAppProcess = null;
 
   function tryInitialize () {
@@ -86,15 +85,7 @@ function Runtime () {
     }
   };
 
-  function assertCalledInJavaPerformCallback () {
-    if (threadsInPerform === 0) {
-      throw new Error('Not allowed outside Java.perform() callback');
-    }
-  }
-
   this.synchronized = function (obj, fn) {
-    assertCalledInJavaPerformCallback();
-
     const objHandle = obj.hasOwnProperty('$handle') ? obj.$handle : obj;
     if (!(objHandle instanceof NativePointer)) {
       throw new Error('Java.synchronized: the first argument `obj` must be either a pointer or a Java instance');
@@ -259,8 +250,6 @@ function Runtime () {
   }
 
   this.scheduleOnMainThread = function (fn) {
-    assertCalledInJavaPerformCallback();
-
     const ActivityThread = classFactory.use('android.app.ActivityThread');
     const Handler = classFactory.use('android.os.Handler');
     const Looper = classFactory.use('android.os.Looper');
@@ -287,91 +276,78 @@ function Runtime () {
     assertJavaApiIsAvailable();
 
     if (!isAppProcess() || classFactory.loader !== null) {
-      threadsInPerform++;
       try {
         vm.perform(fn);
       } catch (e) {
         setTimeout(() => { throw e; }, 0);
-      } finally {
-        threadsInPerform--;
       }
     } else {
       pending.push(fn);
       if (pending.length === 1) {
-        threadsInPerform++;
-        try {
-          vm.perform(() => {
-            const ActivityThread = classFactory.use('android.app.ActivityThread');
-            const app = ActivityThread.currentApplication();
-            if (app !== null) {
-              const Process = classFactory.use('android.os.Process');
-              classFactory.loader = app.getClassLoader();
+        vm.perform(() => {
+          const ActivityThread = classFactory.use('android.app.ActivityThread');
+          const app = ActivityThread.currentApplication();
+          if (app !== null) {
+            const Process = classFactory.use('android.os.Process');
+            classFactory.loader = app.getClassLoader();
 
-              if (Process.myUid() === Process.SYSTEM_UID.value) {
-                classFactory.cacheDir = '/data/system';
-              } else {
-                classFactory.cacheDir = app.getCacheDir().getCanonicalPath();
-              }
-              performPending(); // already initialized, continue
+            if (Process.myUid() === Process.SYSTEM_UID.value) {
+              classFactory.cacheDir = '/data/system';
             } else {
-              let initialized = false;
-              let hookpoint = 'early';
-
-              const handleBindApplication = ActivityThread.handleBindApplication;
-              handleBindApplication.implementation = function (data) {
-                if (data.instrumentationName.value !== null) {
-                  hookpoint = 'late';
-
-                  const LoadedApk = classFactory.use('android.app.LoadedApk');
-                  const makeApplication = LoadedApk.makeApplication;
-                  makeApplication.implementation = function (forceDefaultAppClass, instrumentation) {
-                    if (!initialized) {
-                      initialized = true;
-                      classFactory.loader = this.getClassLoader();
-                      classFactory.cacheDir = classFactory.use('java.io.File').$new(this.getDataDir() + '/cache').getCanonicalPath();
-                      performPending();
-                    }
-
-                    return makeApplication.apply(this, arguments);
-                  };
-                }
-
-                handleBindApplication.apply(this, arguments);
-              };
-
-              const getPackageInfoNoCheck = ActivityThread.getPackageInfoNoCheck;
-              getPackageInfoNoCheck.implementation = function (appInfo) {
-                const apk = getPackageInfoNoCheck.apply(this, arguments);
-                if (!initialized && hookpoint === 'early') {
-                  initialized = true;
-                  classFactory.loader = apk.getClassLoader();
-                  classFactory.cacheDir = classFactory.use('java.io.File').$new(appInfo.dataDir.value + '/cache').getCanonicalPath();
-                  performPending();
-                }
-                return apk;
-              };
+              classFactory.cacheDir = app.getCacheDir().getCanonicalPath();
             }
-          });
-        } finally {
-          threadsInPerform--;
-        }
+            performPending(); // already initialized, continue
+          } else {
+            let initialized = false;
+            let hookpoint = 'early';
+
+            const handleBindApplication = ActivityThread.handleBindApplication;
+            handleBindApplication.implementation = function (data) {
+              if (data.instrumentationName.value !== null) {
+                hookpoint = 'late';
+
+                const LoadedApk = classFactory.use('android.app.LoadedApk');
+                const makeApplication = LoadedApk.makeApplication;
+                makeApplication.implementation = function (forceDefaultAppClass, instrumentation) {
+                  if (!initialized) {
+                    initialized = true;
+                    classFactory.loader = this.getClassLoader();
+                    classFactory.cacheDir = classFactory.use('java.io.File').$new(this.getDataDir() + '/cache').getCanonicalPath();
+                    performPending();
+                  }
+
+                  return makeApplication.apply(this, arguments);
+                };
+              }
+
+              handleBindApplication.apply(this, arguments);
+            };
+
+            const getPackageInfoNoCheck = ActivityThread.getPackageInfoNoCheck;
+            getPackageInfoNoCheck.implementation = function (appInfo) {
+              const apk = getPackageInfoNoCheck.apply(this, arguments);
+              if (!initialized && hookpoint === 'early') {
+                initialized = true;
+                classFactory.loader = apk.getClassLoader();
+                classFactory.cacheDir = classFactory.use('java.io.File').$new(appInfo.dataDir.value + '/cache').getCanonicalPath();
+                performPending();
+              }
+              return apk;
+            };
+          }
+        });
       }
     }
   };
 
   function performPending () {
-    threadsInPerform++;
-    try {
-      while (pending.length > 0) {
-        const fn = pending.shift();
-        try {
-          vm.perform(fn);
-        } catch (e) {
-          setTimeout(() => { throw e; }, 0);
-        }
+    while (pending.length > 0) {
+      const fn = pending.shift();
+      try {
+        vm.perform(fn);
+      } catch (e) {
+        setTimeout(() => { throw e; }, 0);
       }
-    } finally {
-      threadsInPerform--;
     }
   }
 
@@ -388,16 +364,10 @@ function Runtime () {
       });
     }
 
-    threadsInPerform++;
-    try {
-      vm.perform(fn);
-    } finally {
-      threadsInPerform--;
-    }
+    vm.perform(fn);
   };
 
   this.use = function (className) {
-    assertCalledInJavaPerformCallback();
     return classFactory.use(className);
   };
 
@@ -406,7 +376,6 @@ function Runtime () {
   };
 
   this.choose = function (specifier, callbacks) {
-    assertCalledInJavaPerformCallback();
     classFactory.choose(specifier, callbacks);
   };
 
@@ -420,7 +389,6 @@ function Runtime () {
 
   // Reference: http://stackoverflow.com/questions/2848575/how-to-detect-ui-thread-on-android
   this.isMainThread = function () {
-    assertCalledInJavaPerformCallback();
     const Looper = classFactory.use('android.os.Looper');
     const mainLooper = Looper.getMainLooper();
     const myLooper = Looper.myLooper();
