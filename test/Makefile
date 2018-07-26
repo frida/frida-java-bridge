@@ -8,7 +8,7 @@ android_sysroot := $(ANDROID_NDK_ROOT)/platforms/$(android_platform)/arch-$(ANDR
 deploy_prefix := /data/local/tmp
 deploy_data_dir := $(deploy_prefix)/frida-java-tests
 
-frida_version := 12.0.5
+frida_version := $(shell curl --silent https://api.github.com/repos/frida/frida/releases/latest | grep -Po '"tag_name": "\K.*?(?=")')
 
 test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
