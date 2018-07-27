@@ -13,9 +13,13 @@ through the global named `Java`.
 With environment configured accordingly:
 
 ```sh
-$ export ANDROID_SDK_ROOT=~/Library/Android/sdk
+$ export ANDROID_SDK_ROOT=~/Library/Android/Sdk
 $ export ANDROID_NDK_ROOT=/usr/local/opt/android-ndk-r15c
 ```
+
+### Configuration
+
+ - Go to `/test/config.mk` for editing the device configuration settings.
 
 ### Run
 
