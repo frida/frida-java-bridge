@@ -304,8 +304,14 @@ function Runtime () {
             const ActivityThread = classFactory.use('android.app.ActivityThread');
             const app = ActivityThread.currentApplication();
             if (app !== null) {
+              const Process = classFactory.use('android.os.Process');
               classFactory.loader = app.getClassLoader();
-              classFactory.cacheDir = app.getCacheDir().getCanonicalPath();
+
+              if (Process.myUid() === Process.SYSTEM_UID.value) {
+                classFactory.cacheDir = '/data/system';
+              } else {
+                classFactory.cacheDir = app.getCacheDir().getCanonicalPath();
+              }
               performPending(); // already initialized, continue
             } else {
               const m = ActivityThread.getPackageInfoNoCheck;
