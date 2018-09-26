@@ -31,6 +31,16 @@ public class MethodTest {
     }
 
     @Test
+    public void charSequenceCanBeReturned() {
+        loadScript("var Returner = Java.use('re.frida.Returner');" + 
+                "var returner = Returner.$new();" + 
+                "send(returner.getString());" + 
+                "send(returner.getStringBuffer().toString());");
+        assertEquals("izi", script.getNextMessage());
+        assertEquals("let me in", script.getNextMessage());
+    }
+
+    @Test
     public void primitiveArrayCanBeReturned() {
         loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
                 "var buffinator = Buffinator.$new();" +
@@ -263,6 +273,21 @@ class Overloader {
 
     public int frobnicate(int factor) {
         return factor * 37;
+    }
+}
+
+class Returner {
+    public static String s = "izi";
+    
+    // Any class that implements CharacterSequence and is not a String
+    public static StringBuffer sb = new StringBuffer("let me in");
+
+    public String getString() {
+        return s;
+    }
+
+    public StringBuffer getStringBuffer() {
+        return sb;
     }
 }
 
