@@ -314,11 +314,35 @@ function Runtime () {
               }
               performPending(); // already initialized, continue
             } else {
-              const m = ActivityThread.getPackageInfoNoCheck;
               let initialized = false;
-              m.implementation = function (appInfo) {
-                const apk = m.apply(this, arguments);
-                if (!initialized) {
+              let hookpoint = 'early';
+
+              const handleBindApplication = ActivityThread.handleBindApplication;
+              handleBindApplication.implementation = function (data) {
+                if (data.instrumentationName.value !== null) {
+                  hookpoint = 'late';
+
+                  const LoadedApk = classFactory.use('android.app.LoadedApk');
+                  const makeApplication = LoadedApk.makeApplication;
+                  makeApplication.implementation = function (forceDefaultAppClass, instrumentation) {
+                    if (!initialized) {
+                      initialized = true;
+                      classFactory.loader = this.getClassLoader();
+                      classFactory.cacheDir = classFactory.use('java.io.File').$new(this.getDataDir() + '/cache').getCanonicalPath();
+                      performPending();
+                    }
+
+                    return makeApplication.apply(this, arguments);
+                  };
+                }
+
+                handleBindApplication.apply(this, arguments);
+              };
+
+              const getPackageInfoNoCheck = ActivityThread.getPackageInfoNoCheck;
+              getPackageInfoNoCheck.implementation = function (appInfo) {
+                const apk = getPackageInfoNoCheck.apply(this, arguments);
+                if (!initialized && hookpoint === 'early') {
                   initialized = true;
                   classFactory.loader = apk.getClassLoader();
                   classFactory.cacheDir = classFactory.use('java.io.File').$new(appInfo.dataDir.value + '/cache').getCanonicalPath();
