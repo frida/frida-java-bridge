@@ -4,8 +4,8 @@
   "description": "Java runtime interop from Frida",
   "main": "index.js",
   "files": [
-    "index.js",
-    "lib/**/*.js"
+    "/index.js",
+    "/lib/**/*.js"
   ],
   "browserify": {
     "transform": [
