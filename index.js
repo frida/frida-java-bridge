@@ -418,7 +418,10 @@ function Runtime () {
 
   function isAppProcess () {
     if (cachedIsAppProcess === null) {
-      const readlink = new NativeFunction(Module.findExportByName(null, 'readlink'), 'pointer', ['pointer', 'pointer', 'pointer']);
+      const readlink = new NativeFunction(Module.findExportByName(null, 'readlink'), 'pointer', ['pointer', 'pointer', 'pointer'], {
+        scheduling: 'exclusive',
+        exceptions: 'propagate'
+      });
       const pathname = Memory.allocUtf8String('/proc/self/exe');
       const bufferSize = 1024;
       const buffer = Memory.alloc(bufferSize);
