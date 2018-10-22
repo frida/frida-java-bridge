@@ -342,7 +342,7 @@ re_frida_script_destroy (JNIEnv * env, jobject self, jlong handle)
   DestroyScriptOperation op;
   GSource * idle_source;
 
-  op.script = GUM_SCRIPT (handle);
+  op.script = GUM_SCRIPT (GSIZE_TO_POINTER (handle));
 
   op.done = FALSE;
 
