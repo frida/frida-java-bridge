@@ -1,6 +1,6 @@
 {
   "name": "frida-java",
-  "version": "2.0.6",
+  "version": "2.0.7",
   "description": "Java runtime interop from Frida",
   "main": "index.js",
   "files": [
