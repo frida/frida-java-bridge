@@ -167,8 +167,8 @@ public class ClassCreationTest {
         Script script = new Script(TestRunner.fridaJavaBundle +
                 ";\n(function (Java) {" +
                 "Java.perform(function () {" +
-                "Java.classFactory.loader = Java.cast(Memory.readPointer(ptr(" + TestRunner.classLoaderPointer +
-                    ")), Java.use('java.lang.ClassLoader'));" +
+                "Java.classFactory.loader = Java.cast(ptr('" + TestRunner.classLoaderPointer +
+                    "').readPointer(), Java.use('java.lang.ClassLoader'));" +
                 code +
                 "});" +
                 "})(LocalJava);");

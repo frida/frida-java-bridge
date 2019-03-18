@@ -231,18 +231,18 @@ function Runtime () {
     const loadedClassesOffset = 172;
     const hashEntrySize = 8;
     const ptrLoadedClassesHashtable = api.gDvm.add(loadedClassesOffset);
-    const hashTable = Memory.readPointer(ptrLoadedClassesHashtable);
-    const tableSize = Memory.readS32(hashTable);
+    const hashTable = ptrLoadedClassesHashtable.readPointer();
+    const tableSize = hashTable.readS32();
     const ptrpEntries = hashTable.add(12);
-    const pEntries = Memory.readPointer(ptrpEntries);
+    const pEntries = ptrpEntries.readPointer();
     const end = tableSize * hashEntrySize;
 
     for (let offset = 0; offset < end; offset += hashEntrySize) {
       const pEntryPtr = pEntries.add(offset);
-      const dataPtr = Memory.readPointer(pEntryPtr.add(4));
+      const dataPtr = pEntryPtr.add(4).readPointer();
       if (!(HASH_TOMBSTONE.equals(dataPtr) || dataPtr.isNull())) {
-        const descriptionPtr = Memory.readPointer(dataPtr.add(24));
-        const description = Memory.readCString(descriptionPtr);
+        const descriptionPtr = dataPtr.add(24).readPointer();
+        const description = descriptionPtr.readCString();
         callbacks.onMatch(description);
       }
     }
@@ -426,7 +426,7 @@ function Runtime () {
       const buffer = Memory.alloc(bufferSize);
       const size = readlink(pathname, buffer, ptr(bufferSize)).toInt32();
       if (size !== -1) {
-        const exe = Memory.readUtf8String(buffer, size);
+        const exe = buffer.readUtf8String(size);
         cachedIsAppProcess = [/^\/system\/bin\/app_process/.test(exe)];
       } else {
         cachedIsAppProcess = [true];
