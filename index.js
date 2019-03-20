@@ -6,7 +6,8 @@ const {
   withAllArtThreadsSuspended,
   withRunnableArtThread,
   makeArtClassVisitor,
-  makeArtClassLoaderVisitor
+  makeArtClassLoaderVisitor,
+  deoptimizeEverything
 } = require('./lib/android');
 const ClassFactory = require('./lib/class-factory');
 const Env = require('./lib/env');
@@ -401,6 +402,11 @@ function Runtime () {
   this.registerClass = function (spec) {
     return classFactory.registerClass(spec);
   };
+
+  Object.defineProperty(this, 'deoptimizeEverything', {
+    enumerable: true,
+    value: deoptimizeEverything
+  });
 
   Object.defineProperty(this, 'vm', {
     enumerable: false,
