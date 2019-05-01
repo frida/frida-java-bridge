@@ -405,7 +405,9 @@ function Runtime () {
 
   Object.defineProperty(this, 'deoptimizeEverything', {
     enumerable: true,
-    value: deoptimizeEverything
+    value: function () {
+      return deoptimizeEverything(vm, vm.getEnv());
+    }
   });
 
   Object.defineProperty(this, 'vm', {
