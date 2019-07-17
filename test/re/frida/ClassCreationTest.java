@@ -168,104 +168,82 @@ public class ClassCreationTest {
         assertEquals("checkServerTrusted B", script.getNextMessage());
     }
 
-//    @Test
-//    public void extendInterfaceCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-//        loadScript("var EatableEx = Java.use('re.frida.EatableEx');" +
-//                "var BananaEx = Java.registerClass({" +
-//                "  name: 're.frida.BananaEx'," +
-//                "  implements: [EatableEx]," +
-//                "  methods: {" +
-//                "    getName: function () {" +
-//                "      return 'Banana';" +
-//                "    }," +
-//                "    getNameEx: function () {" +
-//                "      return 'BananaEx';" +
-//                "    }," +
-//                "    getCalories: function (grams) {" +
-//                "      return grams * 2;" +
-//                "    }," +
-//                "  }" +
-//                "});" +
-//                "Java.use('re.frida.ClassCreationTest').bananaClass.value = BananaEx.class;");
-//        Eatable eatable = (Eatable) bananaClass.newInstance();
-//        assertEquals("Banana", eatable.getName());
-//        assertEquals("BananaEx", eatable.getNameEx());
-//        assertEquals(100, eatable.getCalories(50));
-//    }
-
+    // Testcase for Issue #119
     @Test
     public void interfaceHasFieldCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         loadScript("var HasField = Java.use('re.frida.HasField');" +
-            "var SimpleHasField = Java.registerClass({" +
-            "  name: 're.frida.SimpleHasField'," +
-            "  implements: [HasField]," +
-            "  methods: {" +
-            "    getName: function () {" +
-            "      return 'hasField';" +
-            "    }," +
-            "    getCalories: function (grams) {" +
-            "      return grams * 2;" +
-            "    }," +
-            "  }" +
-            "});" +
-            "Java.use('re.frida.ClassCreationTest').hasFieldClass.value = SimpleHasField.class;");
+                "var SimpleHasField = Java.registerClass({" +
+                "  name: 're.frida.SimpleHasField'," +
+                "  implements: [HasField]," +
+                "  methods: {" +
+                "    getName: function () {" +
+                "      return 'hasField';" +
+                "    }," +
+                "    getCalories: function (grams) {" +
+                "      return grams * 2;" +
+                "    }," +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').hasFieldClass.value = SimpleHasField.class;");
         HasField hasField = (HasField) hasFieldClass.newInstance();
         assertEquals("hasField", hasField.getName());
         assertEquals(100, hasField.getCalories(50));
         assertEquals("Field", hasField.field);
     }
 
+    // Testcase for Issue #121
     @Test
     public void primitiveArrayInterfaceMethodsCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         loadScript("var PrimitiveArray = Java.use('re.frida.PrimitiveArray');" +
-            "var SimplePrimitiveArray = Java.registerClass({" +
-            "  name: 're.frida.SimplePrimitiveArray'," +
-            "  implements: [PrimitiveArray]," +
-            "  methods: {" +
-            "    getByteArray: [{" +
-            "      returnType: '[B'," +
-            "      argumentTypes: []," +
-            "      implementation: function () {" +
-            "        return [1, 2, 3, 4, 5];" +
-            "      }" +
-            "    }]," +
-            "    setIntArray: function (array, off) {" +
-            "      var s = '';" +
-            "      for (var i = off; i < array.length; i++) s += array[i];" +
-            "      return s;" +
-            "    }," +
-            "  }" +
-            "});" +
-            "Java.use('re.frida.ClassCreationTest').primitiveArrayClass.value = SimplePrimitiveArray.class;");
+                "var SimplePrimitiveArray = Java.registerClass({" +
+                "  name: 're.frida.SimplePrimitiveArray'," +
+                "  implements: [PrimitiveArray]," +
+                "  methods: {" +
+                "    getByteArray: [{" +
+                "      returnType: '[B'," +
+                "      argumentTypes: []," +
+                "      implementation: function () {" +
+                "        return [1, 2, 3, 4, 5];" +
+                "      }" +
+                "    }]," +
+                "    setIntArray: function (array, off) {" +
+                "      var s = '';" +
+                "      for (var i = off; i < array.length; i++) s += array[i];" +
+                "      return s;" +
+                "    }," +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').primitiveArrayClass.value = SimplePrimitiveArray.class;");
         PrimitiveArray primitiveArray = (PrimitiveArray) primitiveArrayClass.newInstance();
         assertEquals(Arrays.equals(new byte[] { 1, 2, 3, 4, 5 }, primitiveArray.getByteArray()), true);
         assertEquals("345", primitiveArray.setIntArray(new int[] { 1, 2, 3, 4, 5 }, 2));
     }
 
+    // Testcase for Issue #122
     @Test
     public void extendingClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         loadScript("const bytes = [];" +
-            "var MyOutputStream = Java.registerClass({" +
-            "  name: 're.frida.MyOutputSteam'," +
-            "  superClass: 'java.io.OutputStream'," +
-            "  methods: {" +
-            "    write: [{" +
-            "      returnType: 'void'," +
-            "      argumentTypes: ['int']," +
-            "      implementation: function (b) {" +
-            "        bytes.push(b);" +
-            "      }" +
-            "    }]," +
-            "    toString: {" +
-            "      returnType: 'java.lang.String'," +
-            "      argumentTypes: []," +
-            "      implementation: function () {" +
-            "        return bytes.join(',');" +
-            "      }" +
-            "    }," +
-            "  }" +
-            "});" +
-            "Java.use('re.frida.ClassCreationTest').myOutputClass.value = MyOutputStream.class;");
+                "var MyOutputStream = Java.registerClass({" +
+                "  name: 're.frida.MyOutputSteam'," +
+                "  superClass: Java.use('java.io.OutputStream')," +
+                "  methods: {" +
+                "    write: [{" +
+                "      returnType: 'void'," +
+                "      argumentTypes: ['int']," +
+                "      implementation: function (b) {" +
+                "        bytes.push(b);" +
+                "      }" +
+                "    }]," +
+                "    toString: {" +
+                "      returnType: 'java.lang.String'," +
+                "      argumentTypes: []," +
+                "      implementation: function () {" +
+                "        return bytes.join(',');" +
+                "      }" +
+                "    }," +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').myOutputClass.value = MyOutputStream.class;");
         OutputStream myOutput = (OutputStream) myOutputClass.newInstance();
         myOutput.write(new byte[] { 1, 2, 3, 4, 5 });
         assertEquals("1,2,3,4,5", myOutput.toString());
@@ -273,33 +251,62 @@ public class ClassCreationTest {
         assertEquals("1,2,3,4,5,1,2,3,4,5", myOutput.toString());
     }
 
+    // Testcase for Issue #122
     @Test
     public void extendingClassCanInvoekSuperMethod() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
-        loadScript("var MyOutputStream = Java.registerClass({" +
-            "  name: 're.frida.MyOutputSteamEx'," +
-            "  superClass: 'java.io.ByteArrayOutputStream'," +
-            "  methods: {" +
-            "    write: [{" +
-            "      returnType: 'void'," +
-            "      argumentTypes: ['[B', 'int', 'int']," +
-            "      implementation: function (b, off, len) {" +
-            "        this.$super('write', b, off, len);" +
-            "      }" +
-            "    }, {" +
-            "      returnType: 'void'," +
-            "      argumentTypes: ['int']," +
-            "      implementation: function (b) {" +
-            "        this.$super('write', b);" +
-            "      }" +
-            "    }]," +
-            "  }" +
-            "});" +
-            "Java.use('re.frida.ClassCreationTest').myOutputClass.value = MyOutputStream.class;");
+        loadScript("var SuperClass = Java.use('java.io.ByteArrayOutputStream');" +
+                "var MyOutputStream = Java.registerClass({" +
+                "  name: 're.frida.MyOutputSteamEx'," +
+                "  superClass: SuperClass," +
+                "  methods: {" +
+                "    write: [{" +
+                "      returnType: 'void'," +
+                "      argumentTypes: ['[B', 'int', 'int']," +
+                "      implementation: function (b, off, len) {" +
+                "        this.$super.write(b, off, len);" +
+                "      }" +
+                "    }, {" +
+                "      returnType: 'void'," +
+                "      argumentTypes: ['int']," +
+                "      implementation: function (b) {" +
+                "        this.$super.write(b);" +
+                "      }" +
+                "    }]," +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').myOutputClass.value = MyOutputStream.class;");
         OutputStream myOutput = (OutputStream) myOutputClass.newInstance();
         myOutput.write(new byte[] { '1', '2', '3', '4', '5' });
         assertEquals("12345", myOutput.toString());
         myOutput.write(new byte[] { '1', '2', '3', '4', '5' });
         assertEquals("1234512345", myOutput.toString());
+    }
+
+    // Testcase for Issue #124
+    @Test
+    public void extendInterfaceCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        loadScript("var Eatable = Java.use('re.frida.Eatable');" +
+                "var EatableEx = Java.use('re.frida.EatableEx');" +
+                "var BananaEx = Java.registerClass({" +
+                "  name: 're.frida.BananaEx'," +
+                "  implements: [EatableEx, Eatable]," +
+                "  methods: {" +
+                "    getName: function () {" +
+                "      return 'Banana';" +
+                "    }," +
+                "    getNameEx: function () {" +
+                "      return 'BananaEx';" +
+                "    }," +
+                "    getCalories: function (grams) {" +
+                "      return grams * 2;" +
+                "    }," +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').bananaClass.value = BananaEx.class;");
+        EatableEx eatable = (EatableEx) bananaClass.newInstance();
+        assertEquals("Banana", eatable.getName());
+        assertEquals("BananaEx", eatable.getNameEx());
+        assertEquals(100, eatable.getCalories(50));
     }
 
     private Script script = null;
