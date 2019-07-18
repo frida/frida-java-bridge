@@ -168,7 +168,7 @@ public class ClassCreationTest {
         assertEquals("checkServerTrusted B", script.getNextMessage());
     }
 
-    // Testcase for Issue #119
+    // Issue #119
     @Test
     public void interfaceHasFieldCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         loadScript("var HasField = Java.use('re.frida.HasField');" +
