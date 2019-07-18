@@ -251,7 +251,7 @@ public class ClassCreationTest {
         assertEquals("1,2,3,4,5,1,2,3,4,5", myOutput.toString());
     }
 
-    // Testcase for Issue #122
+    // Issue #122
     @Test
     public void extendingClassCanInvoekSuperMethod() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         loadScript("var SuperClass = Java.use('java.io.ByteArrayOutputStream');" +
