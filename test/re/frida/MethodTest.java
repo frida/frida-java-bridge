@@ -246,7 +246,7 @@ public class MethodTest {
         }
     }
 
-    // Testcase for Issue #125
+    // Issue #125
     @Test
     public void genericArrayTypeShouldConvertToArray() {
         loadScript("var GenericArray = Java.use('re.frida.GenericArray');" +
