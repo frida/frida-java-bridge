@@ -282,7 +282,7 @@ public class ClassCreationTest {
         assertEquals("1234512345", myOutput.toString());
     }
 
-    // Testcase for Issue #124
+    // Issue #124
     @Test
     public void extendInterfaceCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         loadScript("var Eatable = Java.use('re.frida.Eatable');" +
