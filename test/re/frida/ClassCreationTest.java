@@ -219,7 +219,7 @@ public class ClassCreationTest {
         assertEquals("345", primitiveArray.setIntArray(new int[] { 1, 2, 3, 4, 5 }, 2));
     }
 
-    // Testcase for Issue #122
+    // Issue #122
     @Test
     public void extendingClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         loadScript("const bytes = [];" +
