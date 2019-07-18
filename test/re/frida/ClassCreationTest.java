@@ -191,7 +191,7 @@ public class ClassCreationTest {
         assertEquals("Field", hasField.field);
     }
 
-    // Testcase for Issue #121
+    // Issue #121
     @Test
     public void primitiveArrayInterfaceMethodsCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         loadScript("var PrimitiveArray = Java.use('re.frida.PrimitiveArray');" +
