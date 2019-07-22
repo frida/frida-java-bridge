@@ -173,6 +173,7 @@ public class MethodTest {
         assertEquals("java.lang.IllegalStateException: Already dead: w00t", script.getNextMessage());
     }
 
+    @Test
     public void genericsCanBeUsed() {
         loadScript("var ArrayList = Java.use('java.util.ArrayList');" +
                 "var items = ArrayList.$new();" +
@@ -243,6 +244,15 @@ public class MethodTest {
         } catch (Exception e) {
             fail(e.toString());
         }
+    }
+
+    // Issue #125
+    @Test
+    public void genericArrayTypeShouldConvertToArray() {
+        loadScript("var GenericArray = Java.use('re.frida.GenericArray');" +
+            "var genericArray = GenericArray.getArray();" +
+            "send(Array.isArray(genericArray) + ',' + genericArray.length);");
+        assertEquals("true,2", script.getNextMessage());
     }
 
     private Script script = null;
@@ -344,5 +354,11 @@ class Collider {
 
 class Reflector {
     public static void reflected() {
+    }
+}
+
+class GenericArray {
+    public static Class<?>[] getArray() {
+        return new Class<?>[] { Collider.class, Reflector.class };
     }
 }
