@@ -253,7 +253,7 @@ public class ClassCreationTest {
 
     // Issue #122
     @Test
-    public void extendingClassCanInvoekSuperMethod() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+    public void extendingClassCanInvokeSuperMethod() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         loadScript("var SuperClass = Java.use('java.io.ByteArrayOutputStream');" +
                 "var MyOutputStream = Java.registerClass({" +
                 "  name: 're.frida.MyOutputSteamEx'," +
