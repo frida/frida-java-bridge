@@ -1,5 +1,3 @@
-'use strict';
-
 const getApi = require('./lib/api');
 const {
   getAndroidVersion,
