@@ -11,11 +11,7 @@
   },
   "license": "LGPL-2.0 WITH WxWindows-exception-3.1",
   "dependencies": {
-    "@babel/core": "^7.4.4",
-    "@babel/plugin-transform-runtime": "^7.4.4",
-    "@babel/preset-env": "^7.4.4",
-    "@babel/runtime-corejs2": "^7.4.4",
     "chokidar-cli": "^1.2.2",
-    "frida-compile": "^8.0.1"
+    "frida-compile": "^9.0.3"
   }
 }
