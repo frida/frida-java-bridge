@@ -287,11 +287,10 @@ public class ClassCreationTest {
     // Issue #124
     @Test
     public void derivedInterfaceCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        loadScript("var Eatable = Java.use('re.frida.Eatable');" +
-                "var Fruit = Java.use('re.frida.Fruit');" +
+        loadScript("var Fruit = Java.use('re.frida.Fruit');" +
                 "var Orange = Java.registerClass({" +
                 "  name: 're.frida.Orange'," +
-                "  implements: [Fruit, Eatable]," +
+                "  implements: [Fruit]," +
                 "  methods: {" +
                 "    getName: function () {" +
                 "      return 'Orange';" +
