@@ -18,13 +18,14 @@ import javax.net.ssl.X509TrustManager;
 public class ClassCreationTest {
     private static Object badgerObject = null;
     private static Class bananaClass = null;
-    private static Class hasFieldClass = null;
-    private static Class primitiveArrayClass = null;
-    private static Class myOutputClass = null;
     private static Class trustManagerClass = null;
     private static Class formatterClass = null;
     private static Class weirdTrustManagerClass = null;
-    private HasField hasField;
+    private static Class appleClass = null;
+    private static Class simplePrimitiveArrayClass = null;
+    private static Class myOutputClass1 = null;
+    private static Class myOutputClass2 = null;
+    private static Class orangeClass = null;
 
     @Test
     public void simpleClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -170,25 +171,25 @@ public class ClassCreationTest {
 
     // Issue #119
     @Test
-    public void interfaceHasFieldCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
-        loadScript("var HasField = Java.use('re.frida.HasField');" +
-                "var SimpleHasField = Java.registerClass({" +
-                "  name: 're.frida.SimpleHasField'," +
-                "  implements: [HasField]," +
+    public void interfaceWithFieldCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+        loadScript("var EatableWithField = Java.use('re.frida.EatableWithField');" +
+                "var Apple = Java.registerClass({" +
+                "  name: 're.frida.Apple'," +
+                "  implements: [EatableWithField]," +
                 "  methods: {" +
                 "    getName: function () {" +
-                "      return 'hasField';" +
+                "      return 'Apple';" +
                 "    }," +
                 "    getCalories: function (grams) {" +
-                "      return grams * 2;" +
+                "      return grams / 2;" +
                 "    }," +
                 "  }" +
                 "});" +
-                "Java.use('re.frida.ClassCreationTest').hasFieldClass.value = SimpleHasField.class;");
-        HasField hasField = (HasField) hasFieldClass.newInstance();
-        assertEquals("hasField", hasField.getName());
-        assertEquals(100, hasField.getCalories(50));
-        assertEquals("Field", hasField.field);
+                "Java.use('re.frida.ClassCreationTest').appleClass.value = Apple.class;");
+        EatableWithField eatable = (EatableWithField) appleClass.newInstance();
+        assertEquals("Apple", eatable.getName());
+        assertEquals(25, eatable.getCalories(50));
+        assertEquals(9000, eatable.MAX_CALORIES);
     }
 
     // Issue #121
@@ -206,15 +207,16 @@ public class ClassCreationTest {
                 "        return [1, 2, 3, 4, 5];" +
                 "      }" +
                 "    }]," +
-                "    setIntArray: function (array, off) {" +
+                "    setIntArray: function (array, offset) {" +
                 "      var s = '';" +
-                "      for (var i = off; i < array.length; i++) s += array[i];" +
+                "      for (var i = offset; i < array.length; i++)" +
+                "        s += array[i];" +
                 "      return s;" +
                 "    }," +
                 "  }" +
                 "});" +
-                "Java.use('re.frida.ClassCreationTest').primitiveArrayClass.value = SimplePrimitiveArray.class;");
-        PrimitiveArray primitiveArray = (PrimitiveArray) primitiveArrayClass.newInstance();
+                "Java.use('re.frida.ClassCreationTest').simplePrimitiveArrayClass.value = SimplePrimitiveArray.class;");
+        PrimitiveArray primitiveArray = (PrimitiveArray) simplePrimitiveArrayClass.newInstance();
         assertEquals(Arrays.equals(new byte[] { 1, 2, 3, 4, 5 }, primitiveArray.getByteArray()), true);
         assertEquals("345", primitiveArray.setIntArray(new int[] { 1, 2, 3, 4, 5 }, 2));
     }
@@ -243,8 +245,8 @@ public class ClassCreationTest {
                 "    }," +
                 "  }" +
                 "});" +
-                "Java.use('re.frida.ClassCreationTest').myOutputClass.value = MyOutputStream.class;");
-        OutputStream myOutput = (OutputStream) myOutputClass.newInstance();
+                "Java.use('re.frida.ClassCreationTest').myOutputClass1.value = MyOutputStream.class;");
+        OutputStream myOutput = (OutputStream) myOutputClass1.newInstance();
         myOutput.write(new byte[] { 1, 2, 3, 4, 5 });
         assertEquals("1,2,3,4,5", myOutput.toString());
         myOutput.write(new byte[] { 1, 2, 3, 4, 5 });
@@ -274,8 +276,8 @@ public class ClassCreationTest {
                 "    }]," +
                 "  }" +
                 "});" +
-                "Java.use('re.frida.ClassCreationTest').myOutputClass.value = MyOutputStream.class;");
-        OutputStream myOutput = (OutputStream) myOutputClass.newInstance();
+                "Java.use('re.frida.ClassCreationTest').myOutputClass2.value = MyOutputStream.class;");
+        OutputStream myOutput = (OutputStream) myOutputClass2.newInstance();
         myOutput.write(new byte[] { '1', '2', '3', '4', '5' });
         assertEquals("12345", myOutput.toString());
         myOutput.write(new byte[] { '1', '2', '3', '4', '5' });
@@ -284,29 +286,29 @@ public class ClassCreationTest {
 
     // Issue #124
     @Test
-    public void extendInterfaceCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void derivedInterfaceCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         loadScript("var Eatable = Java.use('re.frida.Eatable');" +
-                "var EatableEx = Java.use('re.frida.EatableEx');" +
-                "var BananaEx = Java.registerClass({" +
-                "  name: 're.frida.BananaEx'," +
-                "  implements: [EatableEx, Eatable]," +
+                "var Fruit = Java.use('re.frida.Fruit');" +
+                "var Orange = Java.registerClass({" +
+                "  name: 're.frida.Orange'," +
+                "  implements: [Fruit, Eatable]," +
                 "  methods: {" +
                 "    getName: function () {" +
-                "      return 'Banana';" +
-                "    }," +
-                "    getNameEx: function () {" +
-                "      return 'BananaEx';" +
+                "      return 'Orange';" +
                 "    }," +
                 "    getCalories: function (grams) {" +
-                "      return grams * 2;" +
+                "      return grams * 3;" +
+                "    }," +
+                "    getTags: function () {" +
+                "      return ['tasty', 'sweet'];" +
                 "    }," +
                 "  }" +
                 "});" +
-                "Java.use('re.frida.ClassCreationTest').bananaClass.value = BananaEx.class;");
-        EatableEx eatable = (EatableEx) bananaClass.newInstance();
-        assertEquals("Banana", eatable.getName());
-        assertEquals("BananaEx", eatable.getNameEx());
-        assertEquals(100, eatable.getCalories(50));
+                "Java.use('re.frida.ClassCreationTest').orangeClass.value = Orange.class;");
+        Fruit fruit = (Fruit) orangeClass.newInstance();
+        assertEquals("Orange", fruit.getName());
+        assertEquals(150, fruit.getCalories(50));
+        assertEquals(Arrays.equals(new String[] { "tasty", "sweet" }, fruit.getTags()), true);
     }
 
     private Script script = null;
