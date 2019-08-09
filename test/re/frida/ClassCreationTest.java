@@ -311,7 +311,7 @@ public class ClassCreationTest {
         assertEquals(Arrays.equals(new String[] { "tasty", "sweet" }, fruit.getTags()), true);
     }
 
-    // Issue #76
+    // Issue #76/#133
     @Test
     public void classWithUserDefinedFieldsCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         loadScript("var Formatter = Java.use('re.frida.Formatter');" +
@@ -327,18 +327,16 @@ public class ClassCreationTest {
                 "      returnType: 'java.lang.String'," +
                 "      argumentTypes: ['int']," +
                 "      implementation: function (val) {" +
-                "        const self = Java.cast(this, UserDefinedFields);" +
-                "        const oldVal = self.fieldInt.value;" +
-                "        self.fieldInt.value = val;" +
+                "        const oldVal = this.fieldInt.value;" +
+                "        this.fieldInt.value = val;" +
                 "        return oldVal + ': ' + val;" +
                 "      }" +
                 "    }, {" +
                 "      returnType: 'java.lang.String'," +
                 "      argumentTypes: ['java.lang.String']," +
                 "      implementation: function (val) {" +
-                "        const self = Java.cast(this, UserDefinedFields);" +
-                "        const oldVal = self.fieldStr.value;" +
-                "        self.fieldStr.value = val;" +
+                "        const oldVal = this.fieldStr.value;" +
+                "        this.fieldStr.value = val;" +
                 "        return oldVal + ': ' + val;" +
                 "      }" +
                 "    }]" +
