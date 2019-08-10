@@ -25,8 +25,8 @@ public class ClassCreationTest {
     private static Class simplePrimitiveArrayClass = null;
     private static Class myOutputClass1 = null;
     private static Class myOutputClass2 = null;
-    private static Class userDefinedFieldClass = null;
     private static Class orangeClass = null;
+    private static Class userDefinedFieldClass = null;
 
     @Test
     public void simpleClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -316,27 +316,27 @@ public class ClassCreationTest {
     public void classWithUserDefinedFieldsCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
         loadScript("var Formatter = Java.use('re.frida.Formatter');" +
                 "var UserDefinedFields = Java.registerClass({" +
-                "  name: 're.frida.SimpleFormatter'," +
+                "  name: 're.frida.StatefulFormatter'," +
                 "  implements: [Formatter]," +
                 "  fields: {" +
-                "    fieldInt: 'int'," +
-                "    fieldStr: 'java.lang.String'," +
+                "    lastInt: 'int'," +
+                "    lastStr: 'java.lang.String'," +
                 "  }," +
                 "  methods: {" +
                 "    format: [{" +
                 "      returnType: 'java.lang.String'," +
                 "      argumentTypes: ['int']," +
                 "      implementation: function (val) {" +
-                "        const oldVal = this.fieldInt.value;" +
-                "        this.fieldInt.value = val;" +
+                "        const oldVal = this.lastInt.value;" +
+                "        this.lastInt.value = val;" +
                 "        return oldVal + ': ' + val;" +
                 "      }" +
                 "    }, {" +
                 "      returnType: 'java.lang.String'," +
                 "      argumentTypes: ['java.lang.String']," +
                 "      implementation: function (val) {" +
-                "        const oldVal = this.fieldStr.value;" +
-                "        this.fieldStr.value = val;" +
+                "        const oldVal = this.lastStr.value;" +
+                "        this.lastStr.value = val;" +
                 "        return oldVal + ': ' + val;" +
                 "      }" +
                 "    }]" +
