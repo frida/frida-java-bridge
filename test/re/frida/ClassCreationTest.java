@@ -26,6 +26,7 @@ public class ClassCreationTest {
     private static Class myOutputClass1 = null;
     private static Class myOutputClass2 = null;
     private static Class orangeClass = null;
+    private static Class userDefinedFieldClass = null;
 
     @Test
     public void simpleClassCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException {
@@ -308,6 +309,45 @@ public class ClassCreationTest {
         assertEquals("Orange", fruit.getName());
         assertEquals(150, fruit.getCalories(50));
         assertEquals(Arrays.equals(new String[] { "tasty", "sweet" }, fruit.getTags()), true);
+    }
+
+    // Issue #76/#133
+    @Test
+    public void classWithUserDefinedFieldsCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+        loadScript("var Formatter = Java.use('re.frida.Formatter');" +
+                "var UserDefinedFields = Java.registerClass({" +
+                "  name: 're.frida.StatefulFormatter'," +
+                "  implements: [Formatter]," +
+                "  fields: {" +
+                "    lastInt: 'int'," +
+                "    lastStr: 'java.lang.String'," +
+                "  }," +
+                "  methods: {" +
+                "    format: [{" +
+                "      returnType: 'java.lang.String'," +
+                "      argumentTypes: ['int']," +
+                "      implementation: function (val) {" +
+                "        const oldVal = this.lastInt.value;" +
+                "        this.lastInt.value = val;" +
+                "        return oldVal + ': ' + val;" +
+                "      }" +
+                "    }, {" +
+                "      returnType: 'java.lang.String'," +
+                "      argumentTypes: ['java.lang.String']," +
+                "      implementation: function (val) {" +
+                "        const oldVal = this.lastStr.value;" +
+                "        this.lastStr.value = val;" +
+                "        return oldVal + ': ' + val;" +
+                "      }" +
+                "    }]" +
+                "  }" +
+                "});" +
+                "Java.use('re.frida.ClassCreationTest').userDefinedFieldClass.value = UserDefinedFields.class;");
+        Formatter formatter = (Formatter) userDefinedFieldClass.newInstance();
+        assertEquals("0: 1", formatter.format(1));
+        assertEquals("1: 2", formatter.format(2));
+        assertEquals("null: First", formatter.format("First"));
+        assertEquals("First: Second", formatter.format("Second"));
     }
 
     private Script script = null;
