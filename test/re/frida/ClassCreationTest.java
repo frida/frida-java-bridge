@@ -362,7 +362,7 @@ public class ClassCreationTest {
                 "    buf: 'java.lang.StringBuilder'," +
                 "  }," +
                 "  methods: {" +
-                "    '<init>': [{" +
+                "    $init: [{" +
                 "      returnType: 'void'," +
                 "      argumentTypes: []," +
                 "      implementation: function () {" +
