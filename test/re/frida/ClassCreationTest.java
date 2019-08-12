@@ -350,6 +350,61 @@ public class ClassCreationTest {
         assertEquals("First: Second", formatter.format("Second"));
     }
 
+    // Issue #134
+    @Test
+    public void classWithUserConstructorsCanBeImplemented() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+        loadScript("var StringBuilder = Java.use('java.lang.StringBuilder');" +
+                "var OutputStream = Java.use('java.io.OutputStream');" +
+                "var MyOutputStream = Java.registerClass({" +
+                "  name: 're.frida.MyOutputSteamWithCtor'," +
+                "  superClass: OutputStream," +
+                "  fields: {" +
+                "    buf: 'java.lang.StringBuilder'," +
+                "  }," +
+                "  methods: {" +
+                "    '<init>': [{" +
+                "      returnType: 'void'," +
+                "      argumentTypes: []," +
+                "      implementation: function () {" +
+                "        this.$super.$init();" +
+                "        this.buf.value = StringBuilder.$new();" +
+                "      }" +
+                "    }, {" +
+                "      returnType: 'void'," +
+                "      argumentTypes: ['java.lang.String']," +
+                "      implementation: function (s) {" +
+                "        this.$super.$init();" +
+                "        this.buf.value = StringBuilder.$new(s);" +
+                "      }" +
+                "    }]," +
+                "    write: [{" +
+                "      returnType: 'void'," +
+                "      argumentTypes: ['int']," +
+                "      implementation: function (b) {" +
+                "        this.buf.value.append('' + b);" +
+                "      }" +
+                "    }]," +
+                "    toString: {" +
+                "      returnType: 'java.lang.String'," +
+                "      argumentTypes: []," +
+                "      implementation: function () {" +
+                "        return this.buf.value.toString();" +
+                "      }" +
+                "    }," +
+                "  }" +
+                "});" +
+                "const myOutput1 = Java.cast(MyOutputStream.$new(), OutputStream);" +
+                "myOutput1.write([1, 2, 3], 0, 3);" +
+                "myOutput1.write(4);" +
+                "send(myOutput1.toString());" +
+                "const myOutput2 = Java.cast(MyOutputStream.$new('abc'), OutputStream);" +
+                "myOutput2.write([1, 2, 3], 0, 3);" +
+                "myOutput2.write(4);" +
+                "send(myOutput2.toString());");
+        assertEquals("1234", script.getNextMessage());
+        assertEquals("abc1234", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
