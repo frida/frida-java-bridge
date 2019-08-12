@@ -17,6 +17,6 @@
   },
   "homepage": "https://github.com/frida/frida-java#readme",
   "dependencies": {
-    "jssha": "^2.3.0"
+    "jssha": "^2.3.1"
   }
 }
