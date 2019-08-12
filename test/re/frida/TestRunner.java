@@ -16,7 +16,7 @@ public class TestRunner {
         TestRunner.dataDir = dataDir;
         TestRunner.classLoaderPointer = classLoaderPointer;
 
-        TestRunner.fridaJavaBundle = slurp("frida-java.js");
+        TestRunner.fridaJavaBundle = slurp("frida-java-bridge.js");
 
         registerClassLoader(TestRunner.class.getClassLoader());
 

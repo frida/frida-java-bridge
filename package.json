@@ -1,5 +1,5 @@
 {
-  "name": "frida-java",
+  "name": "frida-java-bridge",
   "version": "3.1.0",
   "description": "Java runtime interop from Frida",
   "main": "index.js",
@@ -9,13 +9,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frida/frida-java.git"
+    "url": "git+https://github.com/frida/frida-java-bridge.git"
   },
   "license": "LGPL-2.0 WITH WxWindows-exception-3.1",
   "bugs": {
-    "url": "https://github.com/frida/frida-java/issues"
+    "url": "https://github.com/frida/frida-java-bridge/issues"
   },
-  "homepage": "https://github.com/frida/frida-java#readme",
+  "homepage": "https://github.com/frida/frida-java-bridge#readme",
   "dependencies": {
     "jssha": "^2.3.1"
   }

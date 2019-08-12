@@ -6,7 +6,7 @@ android_platform := android-$(ANDROID_API_LEVEL)
 android_sysroot := $(ANDROID_NDK_ROOT)/platforms/$(android_platform)/arch-$(ANDROID_ARCH)
 
 deploy_prefix := /data/local/tmp
-deploy_data_dir := $(deploy_prefix)/frida-java-tests
+deploy_data_dir := $(deploy_prefix)/frida-java-bridge-tests
 
 frida_version := 12.6.13
 
@@ -21,7 +21,7 @@ all:
 clean:
 	rm -rf build
 
-deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java.js
+deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java-bridge.js
 	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir) && mkdir -p $(deploy_data_dir)/dalvik-cache"
 	adb push $^ $(deploy_data_dir)
 
@@ -31,8 +31,8 @@ run:
 watch:
 	npm run watch &
 	./node_modules/.bin/chokidar \
-		build/frida-java.js \
-		-c "adb push build/frida-java.js $(deploy_data_dir) \
+		build/frida-java-bridge.js \
+		-c "adb push build/frida-java-bridge.js $(deploy_data_dir) \
 			&& adb shell $(deploy_data_dir)/runner"
 
 debug: build/gdb.setup
@@ -98,7 +98,7 @@ build/hamcrest.jar:
 	@mkdir -p $(@D)
 	curl -Ls https://search.maven.org/remotecontent?filepath=org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar > $@
 
-build/frida-java.js: node_modules
+build/frida-java-bridge.js: node_modules
 	npm run build
 
 node_modules: package.json
