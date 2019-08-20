@@ -32,9 +32,9 @@ public class MethodTest {
 
     @Test
     public void charSequenceCanBeReturned() {
-        loadScript("var Returner = Java.use('re.frida.Returner');" + 
-                "var returner = Returner.$new();" + 
-                "send(returner.getString());" + 
+        loadScript("var Returner = Java.use('re.frida.Returner');" +
+                "var returner = Returner.$new();" +
+                "send(returner.getString());" +
                 "send(returner.getStringBuffer().toString());");
         assertEquals("izi", script.getNextMessage());
         assertEquals("let me in", script.getNextMessage());
@@ -226,10 +226,10 @@ public class MethodTest {
         loadScript("var classDef = Java.use('java.lang.Class');\n" +
                    "var getMethod = classDef.getMethod.overload('java.lang.String',\n" +
                                                                "'[Ljava.lang.Class;');\n" +
-                   "send('overload found');\n" + 
+                   "send('overload found');\n" +
                    "getMethod.implementation = function(name, array) {\n" +
                        "var method = getMethod.call(this, name, array);\n" +
-                       "send(name + ' dereflected');\n" + 
+                       "send(name + ' dereflected');\n" +
                        "return method;\n" +
                    "}\n" +
                    "send('implementation replaced');\n");
@@ -288,7 +288,7 @@ class Overloader {
 
 class Returner {
     public static String s = "izi";
-    
+
     // Any class that implements CharacterSequence and is not a String
     public static StringBuffer sb = new StringBuffer("let me in");
 
