@@ -378,6 +378,10 @@ function Runtime () {
     classFactory.choose(specifier, callbacks);
   };
 
+  this.retain = function (obj) {
+    return classFactory.retain(obj);
+  };
+
   this.cast = function (obj, C) {
     return classFactory.cast(obj, C);
   };

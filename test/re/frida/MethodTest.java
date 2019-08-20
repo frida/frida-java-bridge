@@ -157,6 +157,28 @@ public class MethodTest {
     }
 
     @Test
+    public void replacementCanRetainInstance() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.returnZero.implementation = function () {" +
+                    "var b = Java.retain(this);" +
+                    "send(b.$handle.equals(this.$handle));" +
+                    "setTimeout(processBadger, 50, b, this.id.value);" +
+                    "return 1;" +
+                "};" +
+                "function processBadger(badger, id) {" +
+                    "Java.perform(function () {" +
+                        "send(badger.id.value === id);" +
+                    "});" +
+                "}");
+
+        Badger badger = new Badger();
+
+        assertEquals(badger.returnZero(), 1);
+        assertEquals("false", script.getNextMessage());
+        assertEquals("true", script.getNextMessage());
+    }
+
+    @Test
     public void passingJSStringToReplacementThatThrowsShouldNotCrash() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var IllegalStateException = Java.use('java.lang.IllegalStateException');" +
@@ -322,6 +344,14 @@ class Buffinator {
 }
 
 class Badger {
+    public int id;
+
+    private static int nextId = 1;
+
+    public Badger() {
+        id = nextId++;
+    }
+
     public void die() {
         throw new IllegalStateException("Already dead");
     }
