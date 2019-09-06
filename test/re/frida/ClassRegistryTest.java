@@ -63,6 +63,21 @@ public class ClassRegistryTest {
         assertEquals("name=Joe", script.getNextMessage());
     }
 
+    // Issue #139
+    @Test
+    public void classWrapperShouldBeJavaLangClass() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+        loadScript("var clazz = Java.use('java.lang.Class');" +
+                "send(clazz.class.$className);" +
+                "send(clazz.getClassLoader.overloads.length);" +
+                "clazz = Java.use('java.lang.Exception').$new().getClass();" +
+                "send(clazz.class.$className);" +
+                "send(clazz.getClassLoader.overloads.length);");
+        assertEquals("java.lang.Class", script.getNextMessage());
+        assertEquals("1", script.getNextMessage());
+        assertEquals("java.lang.Class", script.getNextMessage());
+        assertEquals("1", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
