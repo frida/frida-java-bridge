@@ -272,12 +272,34 @@ public class MethodTest {
     @Test
     public void genericArrayTypeShouldConvertToArray() {
         loadScript("var GenericArray = Java.use('re.frida.GenericArray');" +
-            "var genericArray = GenericArray.getArray();" +
-            "send(Array.isArray(genericArray) + ',' + genericArray.length);");
+                "var genericArray = GenericArray.getArray();" +
+                "send(Array.isArray(genericArray) + ',' + genericArray.length);");
         assertEquals("true,2", script.getNextMessage());
     }
 
-    private Script script = null;
+    // Issue #143
+    @Test
+    public void instanceFieldAttributeCanBeRead() {
+        loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
+                "send('' + Cipher.provider.fieldType);" +
+                "send('' + Cipher.provider.fieldReturnType.className);");
+        assertEquals("2", script.getNextMessage());
+        assertEquals("java.security.Provider", script.getNextMessage());
+    }
+
+    // Issue #143
+    @Test
+    public void instanceFieldValueCanNotBeRead() {
+        loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
+                "try {" +
+                "  send(Cipher.provider.value);" +
+                "} catch (e) {" +
+                "  send(e.message);" +
+                "}");
+        assertEquals("getter of provider: cannot get an instance field without an instance.", script.getNextMessage());
+    }
+
+  private Script script = null;
 
     private void loadScript(String code) {
         Script script = new Script(TestRunner.fridaJavaBundle +
