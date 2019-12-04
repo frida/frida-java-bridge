@@ -366,8 +366,8 @@ function Runtime () {
     vm.perform(fn);
   };
 
-  this.use = function (className) {
-    return classFactory.use(className);
+  this.use = function (className, options) {
+    return classFactory.use(className, options);
   };
 
   this.openClassFile = function (filePath) {
