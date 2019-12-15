@@ -151,7 +151,11 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
   jint result;
 
   vm_module = dlopen ((get_system_api_level () >= 21) ? "libart.so" : "libdvm.so", RTLD_LAZY | RTLD_GLOBAL);
-  g_assert (vm_module != NULL);
+  if (vm_module == NULL)
+  {
+    g_printerr ("Unable to load VM: %s\n", dlerror ());
+    exit (1);
+  }
 
   runtime_module = dlopen ("libandroid_runtime.so", RTLD_LAZY | RTLD_GLOBAL);
   g_assert (runtime_module != NULL);
