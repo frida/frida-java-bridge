@@ -299,7 +299,7 @@ public class MethodTest {
         assertEquals("getter of provider: cannot get an instance field without an instance.", script.getNextMessage());
     }
 
-  private Script script = null;
+    private Script script = null;
 
     private void loadScript(String code) {
         Script script = new Script(TestRunner.fridaJavaBundle +
