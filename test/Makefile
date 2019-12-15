@@ -23,17 +23,17 @@ clean:
 
 deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java-bridge.js
 	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir) && mkdir -p $(deploy_data_dir)/dalvik-cache"
-	adb push $^ $(deploy_data_dir)
+	adb push $^ build/$(ANDROID_ABI)/libartpalette.so $(deploy_data_dir)
 
 run:
-	adb shell "$(deploy_data_dir)/runner"
+	adb shell "LD_LIBRARY_PATH=$(APEX_LIBDIR) $(deploy_data_dir)/runner"
 
 watch:
 	npm run watch &
 	./node_modules/.bin/chokidar \
 		build/frida-java-bridge.js \
 		-c "adb push build/frida-java-bridge.js $(deploy_data_dir) \
-			&& adb shell $(deploy_data_dir)/runner"
+			&& adb shell 'LD_LIBRARY_PATH=$(APEX_LIBDIR) $(deploy_data_dir)/runner'"
 
 debug: build/gdb.setup
 	adb shell "rm -f $(deploy_data_dir)/debug-socket"
@@ -59,7 +59,7 @@ build/symbols.stamp:
 	adb pull -a $(shell adb shell "ls $(ANDROID_LIBDIR)/*.so") build/symbols/$(ANDROID_LIBDIR)/; \
 	touch $@
 
-build/$(ANDROID_ABI)/runner: runner.c build/obj/local/$(ANDROID_ABI)/libfrida-gumjs.a
+build/$(ANDROID_ABI)/runner: runner.c artpalette.c build/obj/local/$(ANDROID_ABI)/libfrida-gumjs.a
 	$(ANDROID_NDK_ROOT)/ndk-build \
 		NDK_PROJECT_PATH=$$(pwd) \
 		NDK_APPLICATION_MK=$$(pwd)/Application.mk \
