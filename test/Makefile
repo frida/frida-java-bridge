@@ -26,14 +26,14 @@ deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java-bridge.js
 	adb push $^ build/$(ANDROID_ABI)/libartpalette.so $(deploy_data_dir)
 
 run:
-	adb shell "LD_LIBRARY_PATH=$(APEX_LIBDIR) $(deploy_data_dir)/runner"
+	adb shell "LD_LIBRARY_PATH='$(APEX_LIBDIR):$(deploy_data_dir)' $(deploy_data_dir)/runner"
 
 watch:
 	npm run watch &
 	./node_modules/.bin/chokidar \
 		build/frida-java-bridge.js \
 		-c "adb push build/frida-java-bridge.js $(deploy_data_dir) \
-			&& adb shell 'LD_LIBRARY_PATH=$(APEX_LIBDIR) $(deploy_data_dir)/runner'"
+			&& adb shell 'LD_LIBRARY_PATH='$(APEX_LIBDIR):$(deploy_data_dir)' $(deploy_data_dir)/runner'"
 
 debug: build/gdb.setup
 	adb shell "rm -f $(deploy_data_dir)/debug-socket"

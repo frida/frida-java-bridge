@@ -196,6 +196,32 @@ public class MethodTest {
     }
 
     @Test
+    public void replacementCanBeReverted() {
+        loadScript("var Snake = Java.use('re.frida.Snake');" +
+                "Snake.die.implementation = function () {};" +
+                "Snake.die.implementation = null;");
+
+        Snake snake = new Snake();
+
+        thrown.expect(UnsupportedOperationException.class);
+        thrown.expectMessage("Snakes cannot die");
+        snake.die();
+    }
+
+    @Test
+    public void replacementShouldBeRevertedOnUnload() throws IOException {
+        loadScript("var Mushroom = Java.use('re.frida.Mushroom');" +
+                "Mushroom.die.implementation = function () {};");
+        unloadScript();
+
+        Mushroom mushroom = new Mushroom();
+
+        thrown.expect(UnsupportedOperationException.class);
+        thrown.expectMessage("Mushrooms cannot die");
+        mushroom.die();
+    }
+
+    @Test
     public void genericsCanBeUsed() {
         loadScript("var ArrayList = Java.use('java.util.ArrayList');" +
                 "var items = ArrayList.$new();" +
@@ -311,12 +337,16 @@ public class MethodTest {
         this.script = script;
     }
 
-    @After
-    public void tearDown() throws IOException {
+    private void unloadScript() throws IOException {
         if (script != null) {
             script.close();
             script = null;
         }
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        unloadScript();
     }
 }
 
@@ -388,6 +418,18 @@ class Badger {
 
     public int returnZero() {
         return 0;
+    }
+}
+
+class Snake {
+    public void die() {
+        throw new UnsupportedOperationException("Snakes cannot die");
+    }
+}
+
+class Mushroom {
+    public void die() {
+        throw new UnsupportedOperationException("Mushrooms cannot die");
     }
 }
 
