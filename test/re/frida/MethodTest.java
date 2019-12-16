@@ -128,6 +128,31 @@ public class MethodTest {
     }
 
     @Test
+    public void callCanBeTraced() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "var returnZero = Badger.returnZero.clone({ traps: 'all', exceptions: 'propagate' });" +
+                "var badger = Badger.$new();" +
+
+                "Stalker.exclude(Process.getModuleByName('runner'));" +
+                "Stalker.queueDrainInterval = 0;" +
+
+                "Stalker.follow({" +
+                    "events: {" +
+                        "call: true," +
+                    "}," +
+                    "onCallSummary: function (summary) {" +
+                        "send('onCallSummary');" +
+                    "}" +
+                "});" +
+
+                "send(returnZero.call(badger));" +
+
+                "Stalker.flush();");
+        assertEquals("0", script.getNextMessage());
+        assertEquals("onCallSummary", script.getNextMessage());
+    }
+
+    @Test
     public void replacementCanThrowJavaException() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var IllegalArgumentException = Java.use('java.lang.IllegalArgumentException');" +
