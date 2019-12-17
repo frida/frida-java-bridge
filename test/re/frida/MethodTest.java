@@ -128,6 +128,31 @@ public class MethodTest {
     }
 
     @Test
+    public void callCanBeTraced() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "var returnZero = Badger.returnZero.clone({ traps: 'all', exceptions: 'propagate' });" +
+                "var badger = Badger.$new();" +
+
+                "Stalker.exclude(Process.getModuleByName('runner'));" +
+                "Stalker.queueDrainInterval = 0;" +
+
+                "Stalker.follow({" +
+                    "events: {" +
+                        "call: true," +
+                    "}," +
+                    "onCallSummary: function (summary) {" +
+                        "send('onCallSummary');" +
+                    "}" +
+                "});" +
+
+                "send(returnZero.call(badger));" +
+
+                "Stalker.flush();");
+        assertEquals("0", script.getNextMessage());
+        assertEquals("onCallSummary", script.getNextMessage());
+    }
+
+    @Test
     public void replacementCanThrowJavaException() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var IllegalArgumentException = Java.use('java.lang.IllegalArgumentException');" +
@@ -193,6 +218,32 @@ public class MethodTest {
                     "send(e.message);" +
                 "}");
         assertEquals("java.lang.IllegalStateException: Already dead: w00t", script.getNextMessage());
+    }
+
+    @Test
+    public void replacementCanBeReverted() {
+        loadScript("var Snake = Java.use('re.frida.Snake');" +
+                "Snake.die.implementation = function () {};" +
+                "Snake.die.implementation = null;");
+
+        Snake snake = new Snake();
+
+        thrown.expect(UnsupportedOperationException.class);
+        thrown.expectMessage("Snakes cannot die");
+        snake.die();
+    }
+
+    @Test
+    public void replacementShouldBeRevertedOnUnload() throws IOException {
+        loadScript("var Mushroom = Java.use('re.frida.Mushroom');" +
+                "Mushroom.die.implementation = function () {};");
+        unloadScript();
+
+        Mushroom mushroom = new Mushroom();
+
+        thrown.expect(UnsupportedOperationException.class);
+        thrown.expectMessage("Mushrooms cannot die");
+        mushroom.die();
     }
 
     @Test
@@ -299,7 +350,7 @@ public class MethodTest {
         assertEquals("getter of provider: cannot get an instance field without an instance.", script.getNextMessage());
     }
 
-  private Script script = null;
+    private Script script = null;
 
     private void loadScript(String code) {
         Script script = new Script(TestRunner.fridaJavaBundle +
@@ -311,12 +362,16 @@ public class MethodTest {
         this.script = script;
     }
 
-    @After
-    public void tearDown() throws IOException {
+    private void unloadScript() throws IOException {
         if (script != null) {
             script.close();
             script = null;
         }
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        unloadScript();
     }
 }
 
@@ -388,6 +443,18 @@ class Badger {
 
     public int returnZero() {
         return 0;
+    }
+}
+
+class Snake {
+    public void die() {
+        throw new UnsupportedOperationException("Snakes cannot die");
+    }
+}
+
+class Mushroom {
+    public void die() {
+        throw new UnsupportedOperationException("Mushrooms cannot die");
     }
 }
 
