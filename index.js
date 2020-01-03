@@ -58,7 +58,7 @@ function Runtime () {
     if (api !== null) {
       vm.perform(() => {
         const env = vm.getEnv();
-        classFactory.dispose(env);
+        ClassFactory._disposeAll(env);
         Env.dispose(env);
       });
     }
@@ -424,6 +424,11 @@ function Runtime () {
     get: function () {
       return classFactory;
     }
+  });
+
+  Object.defineProperty(this, 'ClassFactory', {
+    enumerable: false,
+    value: ClassFactory
   });
 
   function isAppProcess () {
