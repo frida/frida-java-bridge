@@ -177,7 +177,7 @@ function Runtime () {
     try {
       classHandles.forEach(handle => {
         const className = env.getClassName(handle);
-        callbacks.onMatch(className);
+        callbacks.onMatch(className, handle);
       });
     } finally {
       classHandles.forEach(handle => {
