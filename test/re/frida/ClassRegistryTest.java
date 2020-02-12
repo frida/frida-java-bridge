@@ -65,7 +65,7 @@ public class ClassRegistryTest {
 
     // Issue #139
     @Test
-    public void classWrapperShouldBeJavaLangClass() throws ClassNotFoundException, InstantiationException, IllegalAccessException, IOException {
+    public void classWrapperShouldBeJavaLangClass() {
         loadScript("var clazz = Java.use('java.lang.Class');" +
                 "send(clazz.class.$className);" +
                 "send(clazz.getClassLoader.overloads.length);" +
@@ -76,6 +76,21 @@ public class ClassRegistryTest {
         assertEquals("1", script.getNextMessage());
         assertEquals("java.lang.Class", script.getNextMessage());
         assertEquals("1", script.getNextMessage());
+    }
+
+    @Test
+    public void classWrapperShouldSupportInQueries() {
+        loadScript("var JObject = Java.use('java.lang.Object');" +
+                "send('notifyAll' in JObject);");
+        assertEquals("true", script.getNextMessage());
+    }
+
+    @Test
+    public void classWrapperShouldSupportFetchingKeys() {
+        loadScript("var JObject = Java.use('java.lang.Object');" +
+                "var keys = Object.keys(JObject);" +
+                "send(keys.indexOf('notifyAll') !== -1);");
+        assertEquals("true", script.getNextMessage());
     }
 
     private Script script = null;

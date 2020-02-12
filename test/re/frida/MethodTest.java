@@ -102,7 +102,7 @@ public class MethodTest {
                 "var buffinator = Buffinator.$new();" +
                 "var buffer = Java.array('int', [ 13, 37 ]);" +
                 "send(Object.getOwnPropertyNames(buffer));");
-        assertEquals("[\"$handle\",\"type\",\"length\",\"0\",\"1\"]", script.getNextMessage());
+        assertEquals("[\"$h\",\"type\",\"length\",\"0\",\"1\"]", script.getNextMessage());
     }
 
     @Test
@@ -186,7 +186,7 @@ public class MethodTest {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "Badger.returnZero.implementation = function () {" +
                     "var b = Java.retain(this);" +
-                    "send(b.$handle.equals(this.$handle));" +
+                    "send(b.$h.equals(this.$h));" +
                     "setTimeout(processBadger, 50, b, this.id.value);" +
                     "return 1;" +
                 "};" +
@@ -347,7 +347,7 @@ public class MethodTest {
                 "} catch (e) {" +
                 "  send(e.message);" +
                 "}");
-        assertEquals("getter of provider: cannot get an instance field without an instance.", script.getNextMessage());
+        assertEquals("provider: cannot access an instance field without an instance", script.getNextMessage());
     }
 
     private Script script = null;

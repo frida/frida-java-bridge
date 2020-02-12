@@ -85,7 +85,7 @@ function Runtime () {
   };
 
   this.synchronized = function (obj, fn) {
-    const objHandle = obj.hasOwnProperty('$handle') ? obj.$handle : obj;
+    let objHandle = obj.hasOwnProperty('$h') ? obj.$h : obj;
     if (!(objHandle instanceof NativePointer)) {
       throw new Error('Java.synchronized: the first argument `obj` must be either a pointer or a Java instance');
     }
