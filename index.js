@@ -11,7 +11,7 @@ const ClassFactory = require('./lib/class-factory');
 const Env = require('./lib/env');
 const VM = require('./lib/vm');
 const {
-  JNI_OK, // eslint-disable-line
+  JNI_OK,
   checkJniResult
 } = require('./lib/result');
 
@@ -47,7 +47,9 @@ function Runtime () {
     }
 
     vm = new VM(api);
-    classFactory = new ClassFactory(vm);
+
+    ClassFactory._initialize(vm, api);
+    classFactory = new ClassFactory();
 
     initialized = true;
 
@@ -455,5 +457,3 @@ function Runtime () {
 }
 
 module.exports = new Runtime();
-
-/* global console, Memory, Module, NativePointer, NativeFunction, ptr, Process, WeakRef */
