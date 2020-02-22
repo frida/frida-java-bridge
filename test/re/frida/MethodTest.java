@@ -347,7 +347,17 @@ public class MethodTest {
                 "} catch (e) {" +
                 "  send(e.message);" +
                 "}");
-        assertEquals("provider: cannot access an instance field without an instance", script.getNextMessage());
+        assertEquals("Cannot access an instance field without an instance", script.getNextMessage());
+    }
+
+    @Test
+    public void wrapperShouldSupportDefaultValueOf() {
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "send('' + JString);" +
+                "var str = JString.$new('Hey');" +
+                "send('' + str);");
+        assertEquals("<java.lang.String>", script.getNextMessage());
+        assertEquals("Hey", script.getNextMessage());
     }
 
     private Script script = null;

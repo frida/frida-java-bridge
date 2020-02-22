@@ -268,7 +268,7 @@ class Runtime {
       try {
         this.vm.perform(fn);
       } catch (e) {
-        setTimeout(() => { throw e; }, 0);
+        setImmediate(() => { throw e; });
       }
     } else {
       this._pending.push(fn);
