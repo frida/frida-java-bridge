@@ -93,6 +93,20 @@ public class ClassRegistryTest {
         assertEquals("true", script.getNextMessage());
     }
 
+    @Test
+    public void classWrapperShouldSupportQueryingClassName() {
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "send(JString.$className);" +
+                "var str = JString.$new('Yo');" +
+                "send(str.$className);" +
+                "var JObject = Java.use('java.lang.Object');" +
+                "var obj = Java.cast(str, JObject);" +
+                "send(obj.$className);");
+        assertEquals("java.lang.String", script.getNextMessage());
+        assertEquals("java.lang.String", script.getNextMessage());
+        assertEquals("java.lang.String", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
