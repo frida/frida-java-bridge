@@ -115,6 +115,14 @@ public class MethodTest {
     }
 
     @Test
+    public void methodWithCharArgumentCanBeInvoked() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "var str = Badger.join(' ', [ 'Hello', 'World!' ]);" +
+                "send(str);");
+        assertEquals("Hello World!", script.getNextMessage());
+    }
+
+    @Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -453,6 +461,19 @@ class Badger {
 
     public int returnZero() {
         return 0;
+    }
+
+    public static String join(char delimiter, String... values) {
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i != values.length; i++) {
+            if (i > 0) {
+                result.append(delimiter);
+            }
+            result.append(values[i]);
+        }
+
+        return result.toString();
     }
 }
 
