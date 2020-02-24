@@ -99,12 +99,32 @@ public class ClassRegistryTest {
                 "send(JString.$className);" +
                 "var str = JString.$new('Yo');" +
                 "send(str.$className);" +
-                "var JObject = Java.use('java.lang.Object');" +
-                "var obj = Java.cast(str, JObject);" +
+                "var obj = Java.cast(str, Java.use('java.lang.Object'));" +
                 "send(obj.$className);");
         assertEquals("java.lang.String", script.getNextMessage());
         assertEquals("java.lang.String", script.getNextMessage());
         assertEquals("java.lang.String", script.getNextMessage());
+    }
+
+    @Test
+    public void classWrapperShouldSupportToString() {
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "send(JString.toString());");
+        assertEquals("<class: java.lang.String>", script.getNextMessage());
+    }
+
+    @Test
+    public void classWrapperShouldSupportToJSON() {
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "send(JSON.stringify(JString.toJSON()));" +
+                "var str = JString.$new('Yo');" +
+                "send(JSON.stringify(str.toJSON()));" +
+                "var obj = Java.cast(str, Java.use('java.lang.Object'));" +
+                "send(JSON.stringify(obj.toJSON()));");
+        assertEquals("\"<class: java.lang.String>\"", script.getNextMessage());
+        assertEquals("\"<instance: java.lang.String>\"", script.getNextMessage());
+        assertEquals("\"<instance: java.lang.Object, " +
+            "$className: java.lang.String>\"", script.getNextMessage());
     }
 
     private Script script = null;
