@@ -358,16 +358,6 @@ public class MethodTest {
         assertEquals("Cannot access an instance field without an instance", script.getNextMessage());
     }
 
-    @Test
-    public void wrapperShouldSupportDefaultValueOf() {
-        loadScript("var JString = Java.use('java.lang.String');" +
-                "send('' + JString);" +
-                "var str = JString.$new('Hey');" +
-                "send('' + str);");
-        assertEquals("<java.lang.String>", script.getNextMessage());
-        assertEquals("Hey", script.getNextMessage());
-    }
-
     private Script script = null;
 
     private void loadScript(String code) {

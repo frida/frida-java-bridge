@@ -107,6 +107,16 @@ public class ClassRegistryTest {
     }
 
     @Test
+    public void classWrapperShouldSupportDefaultValueOf() {
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "send('' + JString);" +
+                "var str = JString.$new('Hey');" +
+                "send('' + str);");
+        assertEquals("<class: java.lang.String>", script.getNextMessage());
+        assertEquals("Hey", script.getNextMessage());
+    }
+
+    @Test
     public void classWrapperShouldSupportToString() {
         loadScript("var JString = Java.use('java.lang.String');" +
                 "send(JString.toString());");
