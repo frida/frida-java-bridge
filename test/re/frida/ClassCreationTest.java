@@ -411,7 +411,12 @@ public class ClassCreationTest {
         Script script = new Script(TestRunner.fridaJavaBundle +
                 ";\n(function (Java) {" +
                 "Java.perform(function () {" +
-                "Java.classFactory.loader = Java.cast(ptr('" + TestRunner.classLoaderPointer +
+                "Java.classFactory.cacheDir = '" +
+                        TestRunner.getCacheDir() + "';" +
+                "Java.classFactory.codeCacheDir = '" +
+                        TestRunner.getCodeCacheDir() + "';" +
+                "Java.classFactory.loader = Java.cast(ptr('" +
+                        TestRunner.classLoaderPointer +
                     "').readPointer(), Java.use('java.lang.ClassLoader'));" +
                 code +
                 "});" +

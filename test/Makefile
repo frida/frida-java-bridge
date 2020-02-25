@@ -7,6 +7,7 @@ android_sysroot := $(ANDROID_NDK_ROOT)/platforms/$(android_platform)/arch-$(ANDR
 
 deploy_prefix := /data/local/tmp
 deploy_data_dir := $(deploy_prefix)/frida-java-bridge-tests
+deploy_cache_dir := $(deploy_data_dir)/dalvik-cache
 
 frida_version := 12.8.0
 
@@ -22,7 +23,7 @@ clean:
 	rm -rf build
 
 deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java-bridge.js
-	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir) && mkdir -p $(deploy_data_dir)/dalvik-cache"
+	adb shell "rm -rf $(deploy_data_dir) && mkdir -p $(deploy_data_dir)"
 	adb push $^ build/$(ANDROID_ABI)/libartpalette.so $(deploy_data_dir)
 
 run:
@@ -65,7 +66,8 @@ build/$(ANDROID_ABI)/runner: runner.c artpalette.c build/obj/local/$(ANDROID_ABI
 		NDK_APPLICATION_MK=$$(pwd)/Application.mk \
 		NDK_OUT=$$(pwd)/build/obj \
 		NDK_LIBS_OUT=$$(pwd)/build \
-		FRIDA_JAVA_TESTS_DATA_DIR=$(deploy_data_dir)
+		FRIDA_JAVA_TESTS_DATA_DIR=$(deploy_data_dir) \
+		FRIDA_JAVA_TESTS_CACHE_DIR=$(deploy_cache_dir)
 
 build/obj/local/$(ANDROID_ABI)/libfrida-gumjs.a:
 	@mkdir -p $(@D)

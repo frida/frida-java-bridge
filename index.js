@@ -441,16 +441,29 @@ function initFactoryFromApplication (factory, app) {
   const Process = factory.use('android.os.Process');
 
   factory.loader = app.getClassLoader();
+
   if (Process.myUid() === Process.SYSTEM_UID.value) {
     factory.cacheDir = '/data/system';
+    factory.codeCacheDir = '/data/dalvik-cache';
   } else {
-    factory.cacheDir = app.getCacheDir().getCanonicalPath();
+    if ('getCodeCacheDir' in app) {
+      factory.cacheDir = app.getCacheDir().getCanonicalPath();
+      factory.codeCacheDir = app.getCodeCacheDir().getCanonicalPath();
+    } else {
+      factory.cacheDir = app.getDataDir().getCanonicalPath();
+      factory.codeCacheDir = app.getCacheDir().getCanonicalPath();
+    }
   }
 }
 
 function initFactoryFromLoadedApk (factory, apk) {
+  const JFile = factory.use('java.io.File');
+
   factory.loader = apk.getClassLoader();
-  factory.cacheDir = factory.use('java.io.File').$new(apk.getDataDir() + '/cache').getCanonicalPath();
+
+  const dataDir = JFile.$new(apk.getDataDir()).getCanonicalPath();
+  factory.cacheDir = dataDir;
+  factory.codeCacheDir = dataDir + '/cache';
 }
 
 const runtime = new Runtime();

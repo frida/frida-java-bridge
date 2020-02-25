@@ -81,7 +81,7 @@ main (int argc, char * argv[])
   jmethodID runner_main;
   jclass string;
   jobjectArray argv_value;
-  jstring data_dir_value;
+  jstring data_dir_value, cache_dir_value;
   guint arg_index;
 
   gum_init_embedded ();
@@ -99,12 +99,12 @@ main (int argc, char * argv[])
   frida_java_register_test_runner_api (env);
   frida_java_register_script_api (env);
 
-  (*env)->PushLocalFrame (env, 6);
+  (*env)->PushLocalFrame (env, 7);
 
   runner = (*env)->FindClass (env, "re/frida/TestRunner");
   g_assert (runner != NULL);
 
-  runner_main = (*env)->GetStaticMethodID (env, runner, "main", "([Ljava/lang/String;Ljava/lang/String;J)V");
+  runner_main = (*env)->GetStaticMethodID (env, runner, "main", "([Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;J)V");
   g_assert (runner_main != NULL);
 
   string = (*env)->FindClass (env, "java/lang/String");
@@ -123,8 +123,10 @@ main (int argc, char * argv[])
   }
 
   data_dir_value = (*env)->NewStringUTF (env, FRIDA_JAVA_TESTS_DATA_DIR);
+  cache_dir_value = (*env)->NewStringUTF (env, FRIDA_JAVA_TESTS_CACHE_DIR);
 
-  (*env)->CallStaticVoidMethod (env, runner, runner_main, argv_value, data_dir_value,
+  (*env)->CallStaticVoidMethod (env, runner, runner_main, argv_value,
+      data_dir_value, cache_dir_value,
       (jlong) &re_frida_test_runner_class_loader);
   if ((*env)->ExceptionCheck (env))
   {

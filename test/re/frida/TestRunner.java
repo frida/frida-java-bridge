@@ -11,9 +11,12 @@ public class TestRunner {
     public static long classLoaderPointer;
 
     private static String dataDir;
+    private static String cacheDir;
 
-    public static void main(String[] args, String dataDir, long classLoaderPointer) {
+    public static void main(String[] args, String dataDir, String cacheDir,
+            long classLoaderPointer) {
         TestRunner.dataDir = dataDir;
+        TestRunner.cacheDir = cacheDir;
         TestRunner.classLoaderPointer = classLoaderPointer;
 
         TestRunner.fridaJavaBundle = slurp("frida-java-bridge.js");
@@ -25,6 +28,14 @@ public class TestRunner {
             "re.frida.MethodTest",
             "re.frida.ClassCreationTest"
         );
+    }
+
+    public static String getCacheDir() {
+        return dataDir;
+    }
+
+    public static String getCodeCacheDir() {
+        return cacheDir;
     }
 
     private static native void registerClassLoader(ClassLoader loader);
