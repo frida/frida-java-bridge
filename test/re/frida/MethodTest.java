@@ -123,6 +123,24 @@ public class MethodTest {
     }
 
     @Test
+    public void methodWithBoolObjectLongSignatureCanBeHooked() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "var validate = Badger.validate;" +
+                "validate.implementation = function (label, size) {" +
+                    "send(label);" +
+                    "send(size);" +
+                    "return validate.call(this, label, size);" +
+                "};");
+        Badger badger = new Badger();
+        assertEquals(true, badger.validate("awesome", 42));
+        assertEquals("awesome", script.getNextMessage());
+        assertEquals("42", script.getNextMessage());
+        assertEquals(false, badger.validate("nope", 43));
+        assertEquals("nope", script.getNextMessage());
+        assertEquals("43", script.getNextMessage());
+    }
+
+    @Test
     public void callPropagatesExceptions() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "var badger = Badger.$new();" +
@@ -464,6 +482,10 @@ class Badger {
         }
 
         return result.toString();
+    }
+
+    public final boolean validate(String label, long size) {
+        return label.equals("awesome") && size == 42;
     }
 }
 
