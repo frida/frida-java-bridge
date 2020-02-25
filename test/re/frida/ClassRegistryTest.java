@@ -68,14 +68,14 @@ public class ClassRegistryTest {
     public void classWrapperShouldBeJavaLangClass() {
         loadScript("var clazz = Java.use('java.lang.Class');" +
                 "send(clazz.class.$className);" +
-                "send(clazz.getClassLoader.overloads.length);" +
+                "send('getClassLoader' in clazz);" +
                 "clazz = Java.use('java.lang.Exception').$new().getClass();" +
                 "send(clazz.class.$className);" +
-                "send(clazz.getClassLoader.overloads.length);");
+                "send('getClassLoader' in clazz);");
         assertEquals("java.lang.Class", script.getNextMessage());
-        assertEquals("1", script.getNextMessage());
+        assertEquals("true", script.getNextMessage());
         assertEquals("java.lang.Class", script.getNextMessage());
-        assertEquals("1", script.getNextMessage());
+        assertEquals("true", script.getNextMessage());
     }
 
     @Test
