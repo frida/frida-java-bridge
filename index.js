@@ -218,8 +218,10 @@ class Runtime {
     const HASH_TOMBSTONE = ptr('0xcbcacccd');
     const loadedClassesOffset = 172;
     const hashEntrySize = 8;
+
     const ptrLoadedClassesHashtable = api.gDvm.add(loadedClassesOffset);
     const hashTable = ptrLoadedClassesHashtable.readPointer();
+
     const tableSize = hashTable.readS32();
     const ptrpEntries = hashTable.add(12);
     const pEntries = ptrpEntries.readPointer();
@@ -228,12 +230,19 @@ class Runtime {
     for (let offset = 0; offset < end; offset += hashEntrySize) {
       const pEntryPtr = pEntries.add(offset);
       const dataPtr = pEntryPtr.add(4).readPointer();
-      if (!(HASH_TOMBSTONE.equals(dataPtr) || dataPtr.isNull())) {
-        const descriptionPtr = dataPtr.add(24).readPointer();
-        const description = descriptionPtr.readCString();
-        callbacks.onMatch(description);
+
+      if (dataPtr.isNull() || dataPtr.equals(HASH_TOMBSTONE)) {
+        continue;
+      }
+
+      const descriptionPtr = dataPtr.add(24).readPointer();
+      const description = descriptionPtr.readUtf8String();
+      if (description.startsWith('L')) {
+        const name = description.substring(1, description.length - 1).replace(/\//g, '.');
+        callbacks.onMatch(name);
       }
     }
+
     callbacks.onComplete();
   }
 
