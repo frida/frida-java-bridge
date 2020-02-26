@@ -80,9 +80,13 @@ public class ClassRegistryTest {
 
     @Test
     public void classWrapperShouldSupportInQueries() {
-        loadScript("var JObject = Java.use('java.lang.Object');" +
-                "send('notifyAll' in JObject);");
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "send('join' in JString);" +
+                "send('notifyAll' in JString);" +
+                "send('badger1234' in JString);");
         assertEquals("true", script.getNextMessage());
+        assertEquals("true", script.getNextMessage());
+        assertEquals("false", script.getNextMessage());
     }
 
     @Test
