@@ -288,6 +288,19 @@ public class MethodTest {
     }
 
     @Test
+    public void replacementCanAcceptStringArrayParameter() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.observe.implementation = function (labels) {" +
+                    "return 'yes: ' + labels.join(', ');" +
+                "};");
+
+        Badger badger = new Badger();
+
+        assertEquals("yes: a, , b",
+                badger.observe(new String[] { "a", null, "b" }));
+    }
+
+    @Test
     public void replacementCanRetainByteArrayParameter() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "Badger.eatBytes.implementation = function (bytes) {" +
@@ -575,6 +588,19 @@ class Badger {
     }
 
     public void eatMany(Mushroom[] mushrooms) {
+    }
+
+    public String observe(String[] labels) {
+        StringBuilder result = new StringBuilder();
+
+        for (int i = 0; i != labels.length; i++) {
+            String label = labels[i];
+            if (label != null) {
+                result.append(labels);
+            }
+        }
+
+        return result.toString();
     }
 
     public void eatBytes(byte[] bytes) {
