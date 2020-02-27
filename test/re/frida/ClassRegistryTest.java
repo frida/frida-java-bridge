@@ -81,7 +81,7 @@ public class ClassRegistryTest {
     @Test
     public void classWrapperShouldSupportInQueries() {
         loadScript("var JString = Java.use('java.lang.String');" +
-                "send('join' in JString);" +
+                "send('charAt' in JString);" +
                 "send('notifyAll' in JString);" +
                 "send('badger1234' in JString);");
         assertEquals("true", script.getNextMessage());
