@@ -9,6 +9,7 @@ const {
 } = require('./lib/android');
 const ClassFactory = require('./lib/class-factory');
 const Env = require('./lib/env');
+const Types = require('./lib/types');
 const VM = require('./lib/vm');
 const {
   JNI_OK,
@@ -56,6 +57,7 @@ class Runtime {
     const vm = new VM(api);
     this.vm = vm;
 
+    Types.initialize(vm);
     ClassFactory._initialize(vm, api);
     this.classFactory = new ClassFactory();
 

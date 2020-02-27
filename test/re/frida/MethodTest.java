@@ -97,12 +97,28 @@ public class MethodTest {
     }
 
     @Test
-    public void primitiveArrayOwnKeysCanBeQueried() {
+    public void primitiveArrayCanBeQueried() {
         loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
                 "var buffinator = Buffinator.$new();" +
                 "var buffer = Java.array('int', [ 13, 37 ]);" +
-                "send(Object.getOwnPropertyNames(buffer));");
-        assertEquals("[\"$h\",\"type\",\"length\",\"0\",\"1\"]", script.getNextMessage());
+                "send('length' in buffer);" +
+                "send('0' in buffer);" +
+                "send('1' in buffer);" +
+                "send('2' in buffer);" +
+                "send(Object.getOwnPropertyNames(buffer));" +
+                "send(Object.keys(buffer));" +
+                "if (Script.runtime === 'V8') {" +
+                    "send(typeof buffer[Symbol('foo')]);" +
+                "} else {" +
+                    "send('undefined');" +
+                "}");
+        assertEquals("true", script.getNextMessage());
+        assertEquals("true", script.getNextMessage());
+        assertEquals("true", script.getNextMessage());
+        assertEquals("false", script.getNextMessage());
+        assertEquals("[\"length\",\"0\",\"1\"]", script.getNextMessage());
+        assertEquals("[\"length\",\"0\",\"1\"]", script.getNextMessage());
+        assertEquals("undefined", script.getNextMessage());
     }
 
     @Test
@@ -226,6 +242,90 @@ public class MethodTest {
 
         assertEquals(badger.returnZero(), 1);
         assertEquals("false", script.getNextMessage());
+        assertEquals("true", script.getNextMessage());
+    }
+
+    @Test
+    public void replacementCanRetainObjectParameter() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.eat.implementation = function (mushroom) {" +
+                    "var m = Java.retain(mushroom);" +
+                    "setTimeout(processMushroom, 50, m, mushroom.label.value);" +
+                "};" +
+                "function processMushroom(mushroom, label) {" +
+                    "Java.perform(function () {" +
+                        "send(mushroom.label.value === label);" +
+                    "});" +
+                "}");
+
+        Badger badger = new Badger();
+
+        Mushroom mushroom = new Mushroom();
+        mushroom.label = "magic";
+        badger.eat(mushroom);
+
+        assertEquals("true", script.getNextMessage());
+    }
+
+    @Test
+    public void replacementCanRetainObjectArrayParameter() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.eatMany.implementation = function (mushrooms) {" +
+                    "var mushroom = mushrooms[0];" +
+                    "var m = Java.retain(mushroom);" +
+                    "setTimeout(processMushroom, 50, m, mushroom.label.value);" +
+                "};" +
+                "function processMushroom(mushroom, label) {" +
+                    "Java.perform(function () {" +
+                        "send(mushroom.label.value === label);" +
+                    "});" +
+                "}");
+
+        Badger badger = new Badger();
+
+        badger.eatMany(new Mushroom[] { new Mushroom(), new Mushroom() });
+        assertEquals("true", script.getNextMessage());
+    }
+
+    @Test
+    public void replacementCanRetainByteArrayParameter() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.eatBytes.implementation = function (bytes) {" +
+                    "var b = Java.retain(bytes);" +
+                    "setTimeout(processMushroom, 50, b, bytes[0]);" +
+                "};" +
+                "function processMushroom(bytes, firstByte) {" +
+                    "Java.perform(function () {" +
+                        "send(bytes[0] === firstByte);" +
+                    "});" +
+                "}");
+
+        Badger badger = new Badger();
+
+        badger.eatBytes(new byte[] { 42, 24 });
+        assertEquals("true", script.getNextMessage());
+    }
+
+    @Test
+    public void replacementCanRetainReturnedObject() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.makeMushroom.implementation = function () {" +
+                    "var mushroom = this.makeMushroom();" +
+                    "var m = Java.retain(mushroom);" +
+                    "setTimeout(processMushroom, 50, m, mushroom.label.value);" +
+                    "return mushroom;" +
+                "};" +
+                "function processMushroom(mushroom, label) {" +
+                    "Java.perform(function () {" +
+                        "send(mushroom.label.value === label);" +
+                    "});" +
+                "}");
+
+        Badger badger = new Badger();
+
+        Mushroom mushroom = badger.makeMushroom();
+        assertEquals("tasty", mushroom.label);
+
         assertEquals("true", script.getNextMessage());
     }
 
@@ -471,6 +571,21 @@ class Badger {
         return 0;
     }
 
+    public void eat(Mushroom mushroom) {
+    }
+
+    public void eatMany(Mushroom[] mushrooms) {
+    }
+
+    public void eatBytes(byte[] bytes) {
+    }
+
+    public Mushroom makeMushroom() {
+        Mushroom mushroom = new Mushroom();
+        mushroom.label = "tasty";
+        return mushroom;
+    }
+
     public static String join(char delimiter, String... values) {
         StringBuilder result = new StringBuilder();
 
@@ -496,6 +611,8 @@ class Snake {
 }
 
 class Mushroom {
+    public String label = "generic";
+
     public void die() {
         throw new UnsupportedOperationException("Mushrooms cannot die");
     }
