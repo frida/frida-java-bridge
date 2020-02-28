@@ -489,12 +489,25 @@ public class MethodTest {
         assertEquals("Cannot access an instance field without an instance", script.getNextMessage());
     }
 
+    @Test
+    public void performNowWorks() {
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "var str = JString.$new('Hello');" +
+                "send(str.toString());",
+                "performNow");
+        assertEquals("Hello", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
+        loadScript(code, "perform");
+    }
+
+    private void loadScript(String code, String performMethodName) {
         Script script = new Script(TestRunner.fridaJavaBundle +
                 ";\n(function (Java) {" +
-                "Java.perform(function () {" +
+                "Java." + performMethodName + "(function () {" +
                 code +
                 "});" +
                 "})(LocalJava);");

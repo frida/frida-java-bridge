@@ -295,7 +295,7 @@ class Runtime {
     return this.vm.perform(() => {
       const {classFactory: factory} = this;
 
-      if (isAppProcess() && factory.loader === null) {
+      if (this._isAppProcess() && factory.loader === null) {
         const ActivityThread = factory.use('android.app.ActivityThread');
         const app = ActivityThread.currentApplication();
         if (app !== null) {
