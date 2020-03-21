@@ -461,7 +461,7 @@ function initFactoryFromApplication (factory, app) {
       factory.cacheDir = app.getCacheDir().getCanonicalPath();
       factory.codeCacheDir = app.getCodeCacheDir().getCanonicalPath();
     } else {
-      factory.cacheDir = app.getDataDir().getCanonicalPath();
+      factory.cacheDir = app.getFilesDir().getCanonicalPath();
       factory.codeCacheDir = app.getCacheDir().getCanonicalPath();
     }
   }
