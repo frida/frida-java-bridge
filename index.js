@@ -27,7 +27,7 @@ class Runtime {
 
     this._initialized = false;
     this._apiError = null;
-    this._pending = [];
+    this._pendingVmOps = [];
     this._cachedIsAppProcess = null;
 
     this._tryInitialize();
@@ -282,9 +282,9 @@ class Runtime {
         setImmediate(() => { throw e; });
       }
     } else {
-      this._pending.push(fn);
-      if (this._pending.length === 1) {
-        this._performPendingWhenReady();
+      this._pendingVmOps.push(fn);
+      if (this._pendingVmOps.length === 1) {
+        this._performPendingVmOpsWhenReady();
       }
     }
   }
@@ -307,7 +307,7 @@ class Runtime {
     });
   }
 
-  _performPendingWhenReady () {
+  _performPendingVmOpsWhenReady () {
     this.vm.perform(() => {
       const {classFactory: factory} = this;
 
@@ -315,7 +315,7 @@ class Runtime {
       const app = ActivityThread.currentApplication();
       if (app !== null) {
         initFactoryFromApplication(factory, app);
-        this._performPending();
+        this._performPendingVmOps();
         return;
       }
 
@@ -334,7 +334,7 @@ class Runtime {
             if (!initialized) {
               initialized = true;
               initFactoryFromLoadedApk(factory, this);
-              runtime._performPending();
+              runtime._performPendingVmOps();
             }
 
             return makeApplication.apply(this, arguments);
@@ -351,7 +351,7 @@ class Runtime {
         if (!initialized && hookpoint === 'early') {
           initialized = true;
           initFactoryFromLoadedApk(factory, apk);
-          runtime._performPending();
+          runtime._performPendingVmOps();
         }
 
         return apk;
@@ -359,11 +359,11 @@ class Runtime {
     });
   }
 
-  _performPending () {
-    const {vm, _pending: pending} = this;
+  _performPendingVmOps () {
+    const {vm, _pendingVmOps: pending} = this;
 
-    while (pending.length > 0) {
-      const fn = pending.shift();
+    let fn;
+    while ((fn = pending.shift()) !== undefined) {
       try {
         vm.perform(fn);
       } catch (e) {
