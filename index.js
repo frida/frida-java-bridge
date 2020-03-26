@@ -258,8 +258,8 @@ class Runtime {
       let {_wakeupHandler: wakeupHandler} = this;
       if (wakeupHandler === null) {
         const {classFactory: factory} = this;
-        var Handler = factory.use('android.os.Handler');
-        var Looper = factory.use('android.os.Looper');
+        const Handler = factory.use('android.os.Handler');
+        const Looper = factory.use('android.os.Looper');
 
         wakeupHandler = Handler.$new(Looper.getMainLooper());
         this._wakeupHandler = wakeupHandler;
