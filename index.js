@@ -279,7 +279,7 @@ class Runtime {
       try {
         this.vm.perform(fn);
       } catch (e) {
-        setImmediate(() => { throw e; });
+        Script.nextTick(() => { throw e; });
       }
     } else {
       this._pendingVmOps.push(fn);
@@ -367,7 +367,7 @@ class Runtime {
       try {
         vm.perform(fn);
       } catch (e) {
-        setTimeout(() => { throw e; }, 0);
+        Script.nextTick(() => { throw e; });
       }
     }
   }
