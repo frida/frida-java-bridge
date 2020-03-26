@@ -27,6 +27,9 @@ class Runtime {
 
     this._initialized = false;
     this._apiError = null;
+    this._wakeupHandler = null;
+    this._pollListener = null;
+    this._pendingMainOps = [];
     this._pendingVmOps = [];
     this._cachedIsAppProcess = null;
 
@@ -249,27 +252,45 @@ class Runtime {
   }
 
   scheduleOnMainThread (fn) {
-    const {classFactory: factory} = this;
-    const ActivityThread = factory.use('android.app.ActivityThread');
-    const Handler = factory.use('android.os.Handler');
-    const Looper = factory.use('android.os.Looper');
+    this.performNow(() => {
+      this._pendingMainOps.push(fn);
 
-    const looper = Looper.getMainLooper();
-    const handler = Handler.$new.overload('android.os.Looper').call(Handler, looper);
-    const message = handler.obtainMessage();
-    Handler.dispatchMessage.implementation = function (msg) {
-      const sameHandler = this.$isSameObject(handler);
-      if (sameHandler) {
-        const app = ActivityThread.currentApplication();
-        if (app !== null) {
-          Handler.dispatchMessage.implementation = null;
+      let {_wakeupHandler: wakeupHandler} = this;
+      if (wakeupHandler === null) {
+        const {classFactory: factory} = this;
+        var Handler = factory.use('android.os.Handler');
+        var Looper = factory.use('android.os.Looper');
+
+        wakeupHandler = Handler.$new(Looper.getMainLooper());
+        this._wakeupHandler = wakeupHandler;
+      }
+
+      if (this._pollListener === null) {
+        this._pollListener = Interceptor.attach(Module.getExportByName('libc.so', 'epoll_wait'), this._makePollHook());
+        Interceptor.flush();
+      }
+
+      wakeupHandler.sendEmptyMessage(1);
+    });
+  }
+
+  _makePollHook () {
+    const mainThreadId = Process.id;
+    const {_pendingMainOps: pending} = this;
+
+    return function () {
+      if (this.threadId !== mainThreadId)
+        return;
+
+      let fn;
+      while ((fn = pending.shift()) !== undefined) {
+        try {
           fn();
+        } catch (e) {
+          Script.nextTick(() => { throw e; });
         }
-      } else {
-        this.dispatchMessage(msg);
       }
     };
-    message.sendToTarget();
   }
 
   perform (fn) {
