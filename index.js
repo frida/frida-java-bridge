@@ -36,7 +36,6 @@ class Runtime {
     try {
       this._tryInitialize();
     } catch (e) {
-      Script.nextTick(() => { throw e; });
     }
   }
 
