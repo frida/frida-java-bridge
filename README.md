@@ -8,13 +8,13 @@ through the global named `Java`.
 ### Dependencies
 
 - Android SDK Platform-Tools >= 27.0.1
-- Android NDK r20
+- Android NDK r21
 
 With environment configured accordingly:
 
 ```sh
 $ export ANDROID_SDK_ROOT=~/Library/Android/Sdk
-$ export ANDROID_NDK_ROOT=/usr/local/opt/android-ndk-r20
+$ export ANDROID_NDK_ROOT=/usr/local/opt/android-ndk-r21
 ```
 
 ### Configuration

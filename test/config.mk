@@ -1,5 +1,5 @@
 ANDROID_SDK_ROOT ?= $(shell echo ~/Library/Android/sdk)
-ANDROID_NDK_ROOT ?= /usr/local/opt/android-ndk-r15c
+ANDROID_NDK_ROOT ?= /usr/local/opt/android-ndk-r21
 ANDROID_ARCH ?= arm64
 ANDROID_ABI ?= arm64-v8a
 ANDROID_API_LEVEL ?= 29
