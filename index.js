@@ -33,7 +33,11 @@ class Runtime {
     this._pendingVmOps = [];
     this._cachedIsAppProcess = null;
 
-    this._tryInitialize();
+    try {
+      this._tryInitialize();
+    } catch (e) {
+      Script.nextTick(() => { throw e; });
+    }
   }
 
   _tryInitialize () {
