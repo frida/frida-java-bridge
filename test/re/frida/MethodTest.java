@@ -498,6 +498,18 @@ public class MethodTest {
         assertEquals("Hello", script.getNextMessage());
     }
 
+    @Test
+    public void replacementCanAcceptModifiedUTF8StringParameter() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.eatString.implementation = function (str) {" +
+                    "send('yes');" +
+                "};");
+
+        Badger badger = new Badger();
+        badger.feedString();
+        assertEquals("yes", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
@@ -614,6 +626,16 @@ class Badger {
         }
 
         return result.toString();
+    }
+
+    public void eatString(String label) {
+    }
+
+    public void feedString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("apple");
+        sb.append(String.valueOf((char) 0x00));
+        eatString(sb.toString());
     }
 
     public void eatBytes(byte[] bytes) {
