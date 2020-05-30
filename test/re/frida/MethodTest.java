@@ -634,7 +634,7 @@ class Badger {
     public void feedString() {
         StringBuilder sb = new StringBuilder();
         sb.append("apple");
-        sb.append(String.valueOf((char)0x00));
+        sb.append(String.valueOf((char) 0x00));
         eatString(sb.toString());
     }
 
