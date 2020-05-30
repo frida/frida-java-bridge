@@ -503,7 +503,6 @@ public class MethodTest {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
                 "Badger.eatString.implementation = function (str) {" +
                     "send('yes');" +
-                    "return;" +
                 "};");
 
         Badger badger = new Badger();
