@@ -8,6 +8,7 @@ const {
   deoptimizeEverything
 } = require('./lib/android');
 const ClassFactory = require('./lib/class-factory');
+const ClassModel = require('./lib/class-model');
 const Env = require('./lib/env');
 const Types = require('./lib/types');
 const VM = require('./lib/vm');
@@ -252,6 +253,19 @@ class Runtime {
     }
 
     callbacks.onComplete();
+  }
+
+  enumerateMethods (query) {
+    const {classFactory: factory} = this;
+    const env = this.vm.getEnv();
+    const ClassLoader = factory.use('java.lang.ClassLoader');
+
+    return ClassModel.enumerateMethods(query, env)
+      .map(group => {
+        const handle = group.loader;
+        group.loader = (handle !== null) ? factory.wrap(handle, ClassLoader, env) : null;
+        return group;
+      });
   }
 
   scheduleOnMainThread (fn) {
