@@ -17,6 +17,7 @@ const {
   checkJniResult
 } = require('./lib/result');
 
+const jsizeSize = 4;
 const pointerSize = Process.pointerSize;
 
 class Runtime {
@@ -111,8 +112,9 @@ class Runtime {
 
   enumerateLoadedClasses (callbacks) {
     this._checkAvailable();
-
-    if (this.api.flavor === 'art') {
+    if (this.api.flavor === 'jvm') {
+      this._enumerateLoadedClassesJvm(callbacks);
+    }else if (this.api.flavor === 'art') {
       this._enumerateLoadedClassesArt(callbacks);
     } else {
       this._enumerateLoadedClassesDalvik(callbacks);
@@ -134,7 +136,9 @@ class Runtime {
   enumerateClassLoaders (callbacks) {
     this._checkAvailable();
 
-    if (this.api.flavor === 'art') {
+    if (this.api.flavor === 'jvm') {
+      this._enumerateClassLoadersJvm(callbacks);
+    } else if (this.api.flavor === 'art') {
       this._enumerateClassLoadersArt(callbacks);
     } else {
       throw new Error('Enumerating class loaders is only supported on ART');
@@ -253,6 +257,38 @@ class Runtime {
     }
 
     callbacks.onComplete();
+  }
+
+  _enumerateLoadedClassesJvm (callbacks) {
+    const {api, vm} = this;
+    const env = vm.getEnv();
+    const jvmti = api.jvmti;
+
+    const countPoint = Memory.alloc(jsizeSize);
+    const classesPoint = Memory.alloc(pointerSize);
+    jvmti.getLoadedClasses(countPoint, classesPoint);
+
+    const count = countPoint.readS32();
+    const classes = classesPoint.readPointer();
+
+    for (let index = 0; index < count; index++) {
+      const handle = classes.add(index * pointerSize).readPointer();
+      const className = env.getClassName(handle);
+      callbacks.onMatch(className, handle);
+    }
+
+    callbacks.onComplete();
+  }
+
+  _enumerateClassLoadersJvm (callbacks) {
+    this.choose('java.lang.ClassLoader',{
+      onMatch (c) {
+        callbacks.onMatch(c);
+      },
+      onComplete () {
+        callbacks.onComplete();
+      }
+    });
   }
 
   enumerateMethods (query) {
@@ -463,6 +499,11 @@ class Runtime {
   _isAppProcess () {
     let result = this._cachedIsAppProcess;
     if (result === null) {
+      if (this.api.flavor === 'jvm') {
+        result = false;
+        this._cachedIsAppProcess = result;
+        return result;
+      }
       const readlink = new NativeFunction(Module.getExportByName(null, 'readlink'), 'pointer', ['pointer', 'pointer', 'pointer'], {
         exceptions: 'propagate'
       });
