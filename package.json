@@ -16,7 +16,42 @@
     "url": "https://github.com/frida/frida-java-bridge/issues"
   },
   "homepage": "https://github.com/frida/frida-java-bridge#readme",
+  "scripts": {
+    "lint": "semistandard"
+  },
   "dependencies": {
     "jssha": "^2.3.1"
+  },
+  "devDependencies": {
+    "semistandard": "^14.2.0"
+  },
+  "semistandard": {
+    "globals": [
+      "Arm64Relocator",
+      "Arm64Writer",
+      "CModule",
+      "File",
+      "Instruction",
+      "Int64",
+      "Interceptor",
+      "Memory",
+      "Module",
+      "NULL",
+      "NativeCallback",
+      "NativeFunction",
+      "NativePointer",
+      "Process",
+      "Script",
+      "Thread",
+      "ThumbRelocator",
+      "ThumbWriter",
+      "UnixInputStream",
+      "UnixOutputStream",
+      "WeakRef",
+      "X86Relocator",
+      "X86Writer",
+      "ptr",
+      "uint64"
+    ]
   }
 }
