@@ -159,22 +159,27 @@ class Runtime {
 
   _enumerateLoadedClassesJvm (callbacks) {
     const { api, vm } = this;
+    const { jvmti } = api;
     const env = vm.getEnv();
 
     const countPtr = Memory.alloc(jsizeSize);
     const classesPtr = Memory.alloc(pointerSize);
-    api.jvmti.getLoadedClasses(countPtr, classesPtr);
+    jvmti.getLoadedClasses(countPtr, classesPtr);
 
     const count = countPtr.readS32();
     const classes = classesPtr.readPointer();
 
-    for (let i = 0; i < count; i++) {
-      const handle = classes.add(i * pointerSize).readPointer();
-      const className = env.getClassName(handle);
-      callbacks.onMatch(className, handle);
-    }
+    try {
+      for (let i = 0; i < count; i++) {
+        const handle = classes.add(i * pointerSize).readPointer();
+        const className = env.getClassName(handle);
+        callbacks.onMatch(className, handle);
+      }
 
-    callbacks.onComplete();
+      callbacks.onComplete();
+    } finally {
+      jvmti.deallocate(classes);
+    }
   }
 
   _enumerateClassLoadersJvm (callbacks) {
