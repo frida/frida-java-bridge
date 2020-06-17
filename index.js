@@ -12,10 +12,7 @@ const ClassModel = require('./lib/class-model');
 const Env = require('./lib/env');
 const Types = require('./lib/types');
 const VM = require('./lib/vm');
-const {
-  JNI_OK,
-  checkJniResult
-} = require('./lib/result');
+const { checkJniResult } = require('./lib/result');
 
 const jsizeSize = 4;
 const pointerSize = Process.pointerSize;
@@ -79,7 +76,7 @@ class Runtime {
       return;
     }
 
-    const {vm} = this;
+    const { vm } = this;
     vm.perform(() => {
       const env = vm.getEnv();
       ClassFactory._disposeAll(env);
@@ -96,7 +93,7 @@ class Runtime {
   }
 
   synchronized (obj, fn) {
-    let objHandle = obj.hasOwnProperty('$h') ? obj.$h : obj;
+    const { $h: objHandle = obj } = obj;
     if (!(objHandle instanceof NativePointer)) {
       throw new Error('Java.synchronized: the first argument `obj` must be either a pointer or a Java instance');
     }
@@ -161,7 +158,7 @@ class Runtime {
   }
 
   _enumerateLoadedClassesJvm (callbacks) {
-    const {api, vm} = this;
+    const { api, vm } = this;
     const env = vm.getEnv();
 
     const countPtr = Memory.alloc(jsizeSize);
@@ -185,12 +182,12 @@ class Runtime {
   }
 
   _enumerateLoadedClassesArt (callbacks) {
-    const {vm, api} = this;
+    const { vm, api } = this;
     const env = vm.getEnv();
 
     const classHandles = [];
     const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
-    const {vm: vmHandle} = api;
+    const { vm: vmHandle } = api;
     withRunnableArtThread(vm, env, thread => {
       const collectClassHandles = makeArtClassVisitor(klass => {
         classHandles.push(addGlobalReference(vmHandle, thread, klass));
@@ -215,7 +212,7 @@ class Runtime {
   }
 
   _enumerateClassLoadersArt (callbacks) {
-    const {classFactory: factory, vm, api} = this;
+    const { classFactory: factory, vm, api } = this;
     const env = vm.getEnv();
 
     const visitClassLoaders = api['art::ClassLinker::VisitClassLoaders'];
@@ -227,7 +224,7 @@ class Runtime {
 
     const loaderHandles = [];
     const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
-    const {vm: vmHandle} = api;
+    const { vm: vmHandle } = api;
     withRunnableArtThread(vm, env, thread => {
       const collectLoaderHandles = makeArtClassLoaderVisitor(loader => {
         loaderHandles.push(addGlobalReference(vmHandle, thread, loader));
@@ -253,7 +250,7 @@ class Runtime {
   }
 
   _enumerateLoadedClassesDalvik (callbacks) {
-    const {api} = this;
+    const { api } = this;
 
     const HASH_TOMBSTONE = ptr('0xcbcacccd');
     const loadedClassesOffset = 172;
@@ -287,7 +284,7 @@ class Runtime {
   }
 
   enumerateMethods (query) {
-    const {classFactory: factory} = this;
+    const { classFactory: factory } = this;
     const env = this.vm.getEnv();
     const ClassLoader = factory.use('java.lang.ClassLoader');
 
@@ -303,9 +300,9 @@ class Runtime {
     this.performNow(() => {
       this._pendingMainOps.push(fn);
 
-      let {_wakeupHandler: wakeupHandler} = this;
+      let { _wakeupHandler: wakeupHandler } = this;
       if (wakeupHandler === null) {
-        const {classFactory: factory} = this;
+        const { classFactory: factory } = this;
         const Handler = factory.use('android.os.Handler');
         const Looper = factory.use('android.os.Looper');
 
@@ -324,11 +321,12 @@ class Runtime {
 
   _makePollHook () {
     const mainThreadId = Process.id;
-    const {_pendingMainOps: pending} = this;
+    const { _pendingMainOps: pending } = this;
 
     return function () {
-      if (this.threadId !== mainThreadId)
+      if (this.threadId !== mainThreadId) {
         return;
+      }
 
       let fn;
       while ((fn = pending.shift()) !== undefined) {
@@ -362,7 +360,7 @@ class Runtime {
     this._checkAvailable();
 
     return this.vm.perform(() => {
-      const {classFactory: factory} = this;
+      const { classFactory: factory } = this;
 
       if (this._isAppProcess() && factory.loader === null) {
         const ActivityThread = factory.use('android.app.ActivityThread');
@@ -378,7 +376,7 @@ class Runtime {
 
   _performPendingVmOpsWhenReady () {
     this.vm.perform(() => {
-      const {classFactory: factory} = this;
+      const { classFactory: factory } = this;
 
       const ActivityThread = factory.use('android.app.ActivityThread');
       const app = ActivityThread.currentApplication();
@@ -429,7 +427,7 @@ class Runtime {
   }
 
   _performPendingVmOps () {
-    const {vm, _pendingVmOps: pending} = this;
+    const { vm, _pendingVmOps: pending } = this;
 
     let fn;
     while ((fn = pending.shift()) !== undefined) {
@@ -481,7 +479,7 @@ class Runtime {
   }
 
   deoptimizeEverything () {
-    const {vm} = this;
+    const { vm } = this;
     return deoptimizeEverything(vm, vm.getEnv());
   }
 
