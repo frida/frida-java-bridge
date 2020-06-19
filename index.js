@@ -170,7 +170,7 @@ class Runtime {
     const classes = classesPtr.readPointer();
 
     try {
-      for (let i = 0; i < count; i++) {
+      for (let i = 0; i !== count; i++) {
         const handle = classes.add(i * pointerSize).readPointer();
         const className = env.getClassName(handle);
         callbacks.onMatch(className, handle);
