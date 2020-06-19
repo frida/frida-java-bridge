@@ -168,17 +168,23 @@ class Runtime {
 
     const count = countPtr.readS32();
     const classes = classesPtr.readPointer();
+    const handles = [];
+    for (let i = 0; i !== count; i++) {
+      handles.push(classes.add(i * pointerSize).readPointer());
+    }
+    jvmti.deallocate(classes);
 
     try {
-      for (let i = 0; i !== count; i++) {
-        const handle = classes.add(i * pointerSize).readPointer();
+      for (const handle of handles) {
         const className = env.getClassName(handle);
         callbacks.onMatch(className, handle);
       }
 
       callbacks.onComplete();
     } finally {
-      jvmti.deallocate(classes);
+      handles.forEach(handle => {
+        env.deleteLocalRef(handle);
+      });
     }
   }
 
