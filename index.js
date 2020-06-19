@@ -293,7 +293,7 @@ class Runtime {
     const env = this.vm.getEnv();
     const ClassLoader = factory.use('java.lang.ClassLoader');
 
-    return ClassModel.enumerateMethods(query, env)
+    return ClassModel.enumerateMethods(query, this.api, env)
       .map(group => {
         const handle = group.loader;
         group.loader = (handle !== null) ? factory.wrap(handle, ClassLoader, env) : null;
