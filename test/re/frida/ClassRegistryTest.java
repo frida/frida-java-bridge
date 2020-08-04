@@ -141,6 +141,20 @@ public class ClassRegistryTest {
             "$className: java.lang.String>\"", script.getNextMessage());
     }
 
+    @Test
+    public void classWrapperShouldSupportExplicitDispose() {
+        loadScript("var JString = Java.use('java.lang.String');" +
+                "var str = JString.$new('Yo');" +
+                "str.$dispose();" +
+                "try {" +
+                    "str.startsWith('No');" +
+                "} catch (e) {" +
+                    "send(e.message);" +
+                "}");
+        assertEquals("Wrapper is disposed; perhaps it was borrowed from a hook instead of calling Java.retain() " +
+                "to make a long-lived wrapper?", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
