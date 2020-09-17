@@ -448,7 +448,7 @@ public class MethodTest {
         assertEquals("overload found", script.getNextMessage());
         assertEquals("implementation replaced", script.getNextMessage());
 
-        Class reflector = Reflector.class;
+        Class<?> reflector = Reflector.class;
         java.lang.reflect.Method method;
         try {
             method = reflector.getMethod("reflected");

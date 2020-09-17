@@ -5,5 +5,5 @@ ANDROID_ABI ?= arm64-v8a
 ANDROID_API_LEVEL ?= 29
 ANDROID_BINDIR ?= /system/bin
 ANDROID_LIBDIR ?= /system/lib64
-APEX_LIBDIR ?= /apex/com.android.art/$(shell basename $(ANDROID_LIBDIR))
+APEX_LIBDIRS ?= /apex/com.android.runtime/$(shell basename $(ANDROID_LIBDIR)):/apex/com.android.art/$(shell basename $(ANDROID_LIBDIR))
 DEBUG_PORT ?= 5042
