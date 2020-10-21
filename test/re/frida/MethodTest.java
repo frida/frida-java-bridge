@@ -107,17 +107,13 @@ public class MethodTest {
                 "send('2' in buffer);" +
                 "send(Object.getOwnPropertyNames(buffer));" +
                 "send(Object.keys(buffer));" +
-                "if (Script.runtime === 'V8') {" +
-                    "send(typeof buffer[Symbol('foo')]);" +
-                "} else {" +
-                    "send('undefined');" +
-                "}");
+                "send(typeof buffer[Symbol('foo')]);");
         assertEquals("true", script.getNextMessage());
         assertEquals("true", script.getNextMessage());
         assertEquals("true", script.getNextMessage());
         assertEquals("false", script.getNextMessage());
-        assertEquals("[\"length\",\"0\",\"1\"]", script.getNextMessage());
-        assertEquals("[\"length\",\"0\",\"1\"]", script.getNextMessage());
+        assertEquals("[\"0\",\"1\",\"length\"]", script.getNextMessage());
+        assertEquals("[\"0\",\"1\",\"length\"]", script.getNextMessage());
         assertEquals("undefined", script.getNextMessage());
     }
 

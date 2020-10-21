@@ -6,12 +6,12 @@
   "main": "bundle.js",
   "scripts": {
     "prepare": "npm run build",
-    "build": "frida-compile bundle -o build/frida-java-bridge.js -x -c",
-    "watch": "frida-compile bundle -o build/frida-java-bridge.js -x -c -w"
+    "build": "frida-compile bundle -o build/frida-java-bridge.js -c",
+    "watch": "frida-compile bundle -o build/frida-java-bridge.js -c -w"
   },
   "license": "LGPL-2.0 WITH WxWindows-exception-3.1",
   "dependencies": {
     "chokidar-cli": "^2.1.0",
-    "frida-compile": "^9.5.2"
+    "frida-compile": "^10.0.0"
   }
 }

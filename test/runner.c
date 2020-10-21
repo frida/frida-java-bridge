@@ -91,7 +91,7 @@ main (int argc, char * argv[])
   gum_script_scheduler_enable_background_thread (js_scheduler);
   gum_script_scheduler_start (js_scheduler);
 
-  js_backend = gum_script_backend_obtain_v8 ();
+  js_backend = gum_script_backend_obtain_qjs ();
 
   frida_java_init_vm (&vm, &env);
   java_vm = vm;
