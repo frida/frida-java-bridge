@@ -146,7 +146,7 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
 {
   void * vm_module, * runtime_module;
   jint (* create_java_vm) (JavaVM ** vm, JNIEnv ** env, void * vm_args);
-  JavaVMOption options[5];
+  JavaVMOption options[6];
   JavaVMInitArgs args;
   jint (* register_natives) (JNIEnv * env);
   jint (* register_natives_legacy) (JNIEnv * env, jclass clazz);
@@ -169,7 +169,8 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
   options[1].optionString = "-verbose:gc";
   options[2].optionString = "-Xcheck:jni";
   options[3].optionString = "-Xdebug";
-  options[4].optionString = "-Djava.class.path=" FRIDA_JAVA_TESTS_DATA_DIR "/tests.dex";
+  options[4].optionString = "-Xint";
+  options[5].optionString = "-Djava.class.path=" FRIDA_JAVA_TESTS_DATA_DIR "/tests.dex";
 
   args.version = JNI_VERSION_1_6;
   args.nOptions = G_N_ELEMENTS (options);
