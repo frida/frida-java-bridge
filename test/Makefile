@@ -27,23 +27,19 @@ deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java-bridge.js
 	adb push $^ build/$(ANDROID_ABI)/libartpalette.so $(deploy_data_dir)
 
 run:
-	@echo
-	@echo "[*] Running test suite with optimizations enabled."
-	@adb shell "LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner --enable-optimizations"
-	@echo "[*] Running test suite with optimizations disabled (interpreter mode)."
-	@adb shell "LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner"
+	adb shell "LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner $(RUNNER_ARGS)"
 
 watch:
 	npm run watch &
 	./node_modules/.bin/chokidar \
 		build/frida-java-bridge.js \
 		-c "adb push build/frida-java-bridge.js $(deploy_data_dir) \
-			&& adb shell 'LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner'"
+			&& adb shell 'LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner $(RUNNER_ARGS)'"
 
 debug: build/gdb.setup
 	adb shell "rm -f $(deploy_data_dir)/debug-socket"
 	adb push $(ANDROID_NDK_ROOT)/prebuilt/android-$(ANDROID_ARCH)/gdbserver/gdbserver $(deploy_data_dir)
-	adb shell "$(deploy_data_dir)/gdbserver +$(deploy_data_dir)/debug-socket $(deploy_data_dir)/runner" &
+	adb shell "$(deploy_data_dir)/gdbserver +$(deploy_data_dir)/debug-socket $(deploy_data_dir)/runner $(RUNNER_ARGS)" &
 	sleep 1
 	adb forward tcp:$(DEBUG_PORT) localfilesystem:$(deploy_data_dir)/debug-socket
 	$(ANDROID_NDK_ROOT)/prebuilt/$(build_os_arch)/bin/gdb -x build/gdb.setup
