@@ -27,7 +27,11 @@ deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java-bridge.js
 	adb push $^ build/$(ANDROID_ABI)/libartpalette.so $(deploy_data_dir)
 
 run:
-	adb shell "LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner"
+	@echo
+	@echo "[*] Running test suite with optimizations enabled."
+	@adb shell "LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner --enable-optimizations"
+	@echo "[*] Running test suite with optimizations disabled (interpreter mode)."
+	@adb shell "LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner"
 
 watch:
 	npm run watch &

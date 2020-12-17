@@ -8,6 +8,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.lang.UnsupportedOperationException;
 import javax.crypto.Cipher;
 import java.io.IOException;
 
@@ -602,13 +603,15 @@ class Badger {
     }
 
     public int returnZero() {
-        return 0;
+        return new Integer(0).intValue();
     }
 
     public void eat(Mushroom mushroom) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public void eatMany(Mushroom[] mushrooms) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public String observe(String[] labels) {
@@ -625,6 +628,7 @@ class Badger {
     }
 
     public void eatString(String label) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public void feedString() {
@@ -635,6 +639,7 @@ class Badger {
     }
 
     public void eatBytes(byte[] bytes) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public Mushroom makeMushroom() {
