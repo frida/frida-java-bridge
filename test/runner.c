@@ -83,7 +83,7 @@ main (int argc, char * argv[])
   jobjectArray argv_value;
   jstring data_dir_value, cache_dir_value;
   guint arg_index;
-  gboolean optimization_enabled = false;
+  gboolean optimization_enabled = FALSE;
 
   gum_init_embedded ();
 
@@ -94,12 +94,10 @@ main (int argc, char * argv[])
 
   js_backend = gum_script_backend_obtain_qjs ();
 
-  if (argc > 1 && strcmp(argv[1], "--enable-optimizations")) {
-    optimization_enabled = true;
+  if (argc > 1 && strcmp (argv[1], "--enable-optimizations") == 0) {
+    optimization_enabled = TRUE;
 
-    // Pop argv[1].
     argv[1] = argv[0];
-
     argc--;
     argv++;
   }
@@ -158,7 +156,7 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled)
   void * vm_module, * runtime_module;
   jint (* create_java_vm) (JavaVM ** vm, JNIEnv ** env, void * vm_args);
   int n_options;
-  JavaVMOption *options;
+  JavaVMOption * options;
   JavaVMInitArgs args;
   jint (* register_natives) (JNIEnv * env);
   jint (* register_natives_legacy) (JNIEnv * env, jclass clazz);
@@ -178,13 +176,12 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled)
   g_assert (create_java_vm != NULL);
 
   n_options = 5;
-  if (optimization_enabled) {
+  if (optimization_enabled)
     n_options += 4;
-  } else {
+  else
     n_options += 1;
-  }
 
-  options = malloc(n_options * sizeof(JavaVMOption));
+  options = g_new0 (JavaVMOption, n_options);
 
   options[0].optionString = "-verbose:jni";
   options[1].optionString = "-verbose:gc";
@@ -192,12 +189,15 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled)
   options[3].optionString = "-Xdebug";
   options[4].optionString = "-Djava.class.path=" FRIDA_JAVA_TESTS_DATA_DIR "/tests.dex";
 
-  if (optimization_enabled) {
+  if (optimization_enabled)
+  {
     options[5].optionString = "-Xcompiler-option";
     options[6].optionString = "--compiler-filter=speed";
     options[7].optionString = "-Xcompiler-option";
     options[8].optionString = "--inline-max-code-units=0";
-  } else {
+  }
+  else
+  {
     options[5].optionString = "-Xint";
   }
 
@@ -209,7 +209,7 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled)
   result = create_java_vm (vm, env, &args);
   g_assert_cmpint (result, ==, JNI_OK);
 
-  free(options);
+  g_free (options);
 
   register_natives = dlsym (runtime_module, "registerFrameworkNatives");
   if (register_natives != NULL)
