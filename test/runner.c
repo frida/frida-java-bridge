@@ -34,11 +34,13 @@ struct _DestroyScriptOperation
 static void frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled);
 static void frida_java_register_test_runner_api (JNIEnv * env);
 static void frida_java_register_script_api (JNIEnv * env);
+static void frida_java_register_badger_api (JNIEnv * env);
 static JNIEnv * frida_java_get_env (void);
 
 static void re_frida_test_runner_register_class_loader (JNIEnv * env, jclass klass, jobject loader);
 
 static jlong re_frida_script_create (JNIEnv * env, jobject self, jstring source_code);
+static void re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str);
 static gboolean create_script_on_js_thread (gpointer user_data);
 static void on_create_ready (GObject * source_object, GAsyncResult * result, gpointer user_data);
 static void on_load_ready (GObject * source_object, GAsyncResult * result, gpointer user_data);
@@ -60,6 +62,11 @@ static const JNINativeMethod re_frida_script_methods[] =
 {
   { "create", "(Ljava/lang/String;)J", re_frida_script_create },
   { "destroy", "(J)V", re_frida_script_destroy },
+};
+
+static const JNINativeMethod re_frida_badger_methods[] =
+{
+  { "nativeMethod", "(Ljava/lang/String;)V", re_frida_badger_native_method },
 };
 
 static JavaVM * java_vm;
@@ -107,6 +114,7 @@ main (int argc, char * argv[])
 
   frida_java_register_test_runner_api (env);
   frida_java_register_script_api (env);
+  frida_java_register_badger_api (env);
 
   (*env)->PushLocalFrame (env, 7);
 
@@ -260,6 +268,21 @@ frida_java_register_script_api (JNIEnv * env)
   (*env)->DeleteLocalRef (env, script);
 }
 
+static void
+frida_java_register_badger_api (JNIEnv * env)
+{
+  jclass badger;
+  jint result;
+
+  badger = (*env)->FindClass (env, "re/frida/Badger");
+  g_assert (badger != NULL);
+
+  result = (*env)->RegisterNatives (env, badger, re_frida_badger_methods, G_N_ELEMENTS (re_frida_badger_methods));
+  g_assert_cmpint (result, ==, 0);
+
+  (*env)->DeleteLocalRef (env, badger);
+}
+
 static JNIEnv *
 frida_java_get_env (void)
 {
@@ -326,6 +349,12 @@ re_frida_script_create (JNIEnv * env, jobject self, jstring source_code)
   }
 
   return (jlong) op.script;
+}
+
+static void
+re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str)
+{
+    return;
 }
 
 static void
