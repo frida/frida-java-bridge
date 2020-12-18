@@ -8,9 +8,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import java.io.IOException;
 import java.lang.UnsupportedOperationException;
 import javax.crypto.Cipher;
-import java.io.IOException;
 
 public class MethodTest {
     @Rule

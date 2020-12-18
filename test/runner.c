@@ -31,7 +31,7 @@ struct _DestroyScriptOperation
   GCond cond;
 };
 
-static void frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled);
+static void frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean enable_optimizations);
 static void frida_java_register_test_runner_api (JNIEnv * env);
 static void frida_java_register_script_api (JNIEnv * env);
 static void frida_java_register_badger_api (JNIEnv * env);
@@ -40,7 +40,6 @@ static JNIEnv * frida_java_get_env (void);
 static void re_frida_test_runner_register_class_loader (JNIEnv * env, jclass klass, jobject loader);
 
 static jlong re_frida_script_create (JNIEnv * env, jobject self, jstring source_code);
-static void re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str);
 static gboolean create_script_on_js_thread (gpointer user_data);
 static void on_create_ready (GObject * source_object, GAsyncResult * result, gpointer user_data);
 static void on_load_ready (GObject * source_object, GAsyncResult * result, gpointer user_data);
@@ -48,6 +47,8 @@ static void re_frida_script_destroy (JNIEnv * env, jobject self, jlong handle);
 static gboolean destroy_script_on_js_thread (gpointer user_data);
 static void on_unload_ready (GObject * source_object, GAsyncResult * result, gpointer user_data);
 static void re_frida_script_on_message (GumScript * script, const gchar * message, GBytes * data, gpointer user_data);
+
+static void re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str);
 
 static void destroy_weak_ref (jweak ref);
 
@@ -90,7 +91,7 @@ main (int argc, char * argv[])
   jobjectArray argv_value;
   jstring data_dir_value, cache_dir_value;
   guint arg_index;
-  gboolean optimization_enabled = FALSE;
+  gboolean enable_optimizations = FALSE;
 
   gum_init_embedded ();
 
@@ -101,15 +102,16 @@ main (int argc, char * argv[])
 
   js_backend = gum_script_backend_obtain_qjs ();
 
-  if (argc > 1 && strcmp (argv[1], "--enable-optimizations") == 0) {
-    optimization_enabled = TRUE;
+  if (argc > 1 && strcmp (argv[1], "--enable-optimizations") == 0)
+  {
+    enable_optimizations = TRUE;
 
     argv[1] = argv[0];
     argc--;
     argv++;
   }
 
-  frida_java_init_vm (&vm, &env, optimization_enabled);
+  frida_java_init_vm (&vm, &env, enable_optimizations);
   java_vm = vm;
 
   frida_java_register_test_runner_api (env);
@@ -159,7 +161,7 @@ main (int argc, char * argv[])
 }
 
 static void
-frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled)
+frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean enable_optimizations)
 {
   void * vm_module, * runtime_module;
   jint (* create_java_vm) (JavaVM ** vm, JNIEnv ** env, void * vm_args);
@@ -184,7 +186,7 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled)
   g_assert (create_java_vm != NULL);
 
   n_options = 5;
-  if (optimization_enabled)
+  if (enable_optimizations)
     n_options += 4;
   else
     n_options += 1;
@@ -197,7 +199,7 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean optimization_enabled)
   options[3].optionString = "-Xdebug";
   options[4].optionString = "-Djava.class.path=" FRIDA_JAVA_TESTS_DATA_DIR "/tests.dex";
 
-  if (optimization_enabled)
+  if (enable_optimizations)
   {
     options[5].optionString = "-Xcompiler-option";
     options[6].optionString = "--compiler-filter=speed";
@@ -352,12 +354,6 @@ re_frida_script_create (JNIEnv * env, jobject self, jstring source_code)
 }
 
 static void
-re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str)
-{
-    return;
-}
-
-static void
 create_script_operation_notify_complete (CreateScriptOperation * self)
 {
   g_mutex_lock (&self->lock);
@@ -480,6 +476,11 @@ re_frida_script_on_message (GumScript * script, const gchar * message, GBytes * 
   }
 
   (*env)->PopLocalFrame (env, NULL);
+}
+
+static void
+re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str)
+{
 }
 
 static void
