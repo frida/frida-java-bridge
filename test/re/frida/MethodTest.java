@@ -8,8 +8,9 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import javax.crypto.Cipher;
 import java.io.IOException;
+import java.lang.UnsupportedOperationException;
+import javax.crypto.Cipher;
 
 public class MethodTest {
     @Rule
@@ -506,6 +507,18 @@ public class MethodTest {
         assertEquals("yes", script.getNextMessage());
     }
 
+    @Test
+    public void nativeMethodCanBeReplaced() {
+        loadScript("var Badger = Java.use('re.frida.Badger');" +
+                "Badger.nativeMethod.implementation = function (str) {" +
+                    "send(str);" +
+                "};");
+
+        Badger badger = new Badger();
+        badger.nativeMethod("randomString");
+        assertEquals("randomString", script.getNextMessage());
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
@@ -589,6 +602,8 @@ class Badger {
         id = nextId++;
     }
 
+    public native void nativeMethod(String arg);
+
     public void die() {
         throw new IllegalStateException("Already dead");
     }
@@ -602,13 +617,15 @@ class Badger {
     }
 
     public int returnZero() {
-        return 0;
+        return new Integer(0).intValue();
     }
 
     public void eat(Mushroom mushroom) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public void eatMany(Mushroom[] mushrooms) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public String observe(String[] labels) {
@@ -625,6 +642,7 @@ class Badger {
     }
 
     public void eatString(String label) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public void feedString() {
@@ -635,6 +653,7 @@ class Badger {
     }
 
     public void eatBytes(byte[] bytes) {
+        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public Mushroom makeMushroom() {

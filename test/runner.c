@@ -31,9 +31,10 @@ struct _DestroyScriptOperation
   GCond cond;
 };
 
-static void frida_java_init_vm (JavaVM ** vm, JNIEnv ** env);
+static void frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean enable_optimizations);
 static void frida_java_register_test_runner_api (JNIEnv * env);
 static void frida_java_register_script_api (JNIEnv * env);
+static void frida_java_register_badger_api (JNIEnv * env);
 static JNIEnv * frida_java_get_env (void);
 
 static void re_frida_test_runner_register_class_loader (JNIEnv * env, jclass klass, jobject loader);
@@ -46,6 +47,8 @@ static void re_frida_script_destroy (JNIEnv * env, jobject self, jlong handle);
 static gboolean destroy_script_on_js_thread (gpointer user_data);
 static void on_unload_ready (GObject * source_object, GAsyncResult * result, gpointer user_data);
 static void re_frida_script_on_message (GumScript * script, const gchar * message, GBytes * data, gpointer user_data);
+
+static void re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str);
 
 static void destroy_weak_ref (jweak ref);
 
@@ -60,6 +63,11 @@ static const JNINativeMethod re_frida_script_methods[] =
 {
   { "create", "(Ljava/lang/String;)J", re_frida_script_create },
   { "destroy", "(J)V", re_frida_script_destroy },
+};
+
+static const JNINativeMethod re_frida_badger_methods[] =
+{
+  { "nativeMethod", "(Ljava/lang/String;)V", re_frida_badger_native_method },
 };
 
 static JavaVM * java_vm;
@@ -83,6 +91,7 @@ main (int argc, char * argv[])
   jobjectArray argv_value;
   jstring data_dir_value, cache_dir_value;
   guint arg_index;
+  gboolean enable_optimizations;
 
   gum_init_embedded ();
 
@@ -93,11 +102,25 @@ main (int argc, char * argv[])
 
   js_backend = gum_script_backend_obtain_qjs ();
 
-  frida_java_init_vm (&vm, &env);
+  if (argc > 1 && strcmp (argv[1], "--enable-optimizations") == 0)
+  {
+    enable_optimizations = TRUE;
+
+    argv[1] = argv[0];
+    argc--;
+    argv++;
+  }
+  else
+  {
+    enable_optimizations = FALSE;
+  }
+
+  frida_java_init_vm (&vm, &env, enable_optimizations);
   java_vm = vm;
 
   frida_java_register_test_runner_api (env);
   frida_java_register_script_api (env);
+  frida_java_register_badger_api (env);
 
   (*env)->PushLocalFrame (env, 7);
 
@@ -142,11 +165,12 @@ main (int argc, char * argv[])
 }
 
 static void
-frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
+frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean enable_optimizations)
 {
   void * vm_module, * runtime_module;
   jint (* create_java_vm) (JavaVM ** vm, JNIEnv ** env, void * vm_args);
-  JavaVMOption options[6];
+  int n_options;
+  JavaVMOption * options;
   JavaVMInitArgs args;
   jint (* register_natives) (JNIEnv * env);
   jint (* register_natives_legacy) (JNIEnv * env, jclass clazz);
@@ -165,20 +189,41 @@ frida_java_init_vm (JavaVM ** vm, JNIEnv ** env)
   create_java_vm = dlsym (vm_module, "JNI_CreateJavaVM");
   g_assert (create_java_vm != NULL);
 
+  n_options = 5;
+  if (enable_optimizations)
+    n_options += 4;
+  else
+    n_options += 1;
+
+  options = g_new0 (JavaVMOption, n_options);
+
   options[0].optionString = "-verbose:jni";
   options[1].optionString = "-verbose:gc";
   options[2].optionString = "-Xcheck:jni";
   options[3].optionString = "-Xdebug";
-  options[4].optionString = "-Xint";
-  options[5].optionString = "-Djava.class.path=" FRIDA_JAVA_TESTS_DATA_DIR "/tests.dex";
+  options[4].optionString = "-Djava.class.path=" FRIDA_JAVA_TESTS_DATA_DIR "/tests.dex";
+
+  if (enable_optimizations)
+  {
+    options[5].optionString = "-Xcompiler-option";
+    options[6].optionString = "--compiler-filter=speed";
+    options[7].optionString = "-Xcompiler-option";
+    options[8].optionString = "--inline-max-code-units=0";
+  }
+  else
+  {
+    options[5].optionString = "-Xint";
+  }
 
   args.version = JNI_VERSION_1_6;
-  args.nOptions = G_N_ELEMENTS (options);
+  args.nOptions = n_options;
   args.options = options;
   args.ignoreUnrecognized = JNI_TRUE;
 
   result = create_java_vm (vm, env, &args);
   g_assert_cmpint (result, ==, JNI_OK);
+
+  g_free (options);
 
   register_natives = dlsym (runtime_module, "registerFrameworkNatives");
   if (register_natives != NULL)
@@ -227,6 +272,21 @@ frida_java_register_script_api (JNIEnv * env)
   g_assert (re_frida_script_on_message_method != NULL);
 
   (*env)->DeleteLocalRef (env, script);
+}
+
+static void
+frida_java_register_badger_api (JNIEnv * env)
+{
+  jclass badger;
+  jint result;
+
+  badger = (*env)->FindClass (env, "re/frida/Badger");
+  g_assert (badger != NULL);
+
+  result = (*env)->RegisterNatives (env, badger, re_frida_badger_methods, G_N_ELEMENTS (re_frida_badger_methods));
+  g_assert_cmpint (result, ==, 0);
+
+  (*env)->DeleteLocalRef (env, badger);
 }
 
 static JNIEnv *
@@ -420,6 +480,11 @@ re_frida_script_on_message (GumScript * script, const gchar * message, GBytes * 
   }
 
   (*env)->PopLocalFrame (env, NULL);
+}
+
+static void
+re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str)
+{
 }
 
 static void
