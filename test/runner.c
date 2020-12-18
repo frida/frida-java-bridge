@@ -91,7 +91,7 @@ main (int argc, char * argv[])
   jobjectArray argv_value;
   jstring data_dir_value, cache_dir_value;
   guint arg_index;
-  gboolean enable_optimizations = FALSE;
+  gboolean enable_optimizations;
 
   gum_init_embedded ();
 
@@ -109,6 +109,10 @@ main (int argc, char * argv[])
     argv[1] = argv[0];
     argc--;
     argv++;
+  }
+  else
+  {
+    enable_optimizations = FALSE;
   }
 
   frida_java_init_vm (&vm, &env, enable_optimizations);
