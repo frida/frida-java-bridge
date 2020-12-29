@@ -617,15 +617,13 @@ class Badger {
     }
 
     public int returnZero() {
-        return new Integer(0).intValue();
+        return 0;
     }
 
     public void eat(Mushroom mushroom) {
-        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public void eatMany(Mushroom[] mushrooms) {
-        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public String observe(String[] labels) {
@@ -642,7 +640,6 @@ class Badger {
     }
 
     public void eatString(String label) {
-        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public void feedString() {
@@ -653,7 +650,6 @@ class Badger {
     }
 
     public void eatBytes(byte[] bytes) {
-        throw new UnsupportedOperationException("NOT IMPLEMENTED");
     }
 
     public Mushroom makeMushroom() {
