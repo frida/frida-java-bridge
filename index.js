@@ -206,7 +206,7 @@ class Runtime {
         return true;
       });
 
-      api['art::ClassLinker::VisitClasses'](api.artClassLinker, collectClassHandles);
+      api['art::ClassLinker::VisitClasses'](api.artClassLinker.address, collectClassHandles);
     });
 
     try {
@@ -243,7 +243,7 @@ class Runtime {
         return true;
       });
       withAllArtThreadsSuspended(() => {
-        visitClassLoaders(api.artClassLinker, collectLoaderHandles);
+        visitClassLoaders(api.artClassLinker.address, collectLoaderHandles);
       });
     });
 
