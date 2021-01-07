@@ -30,6 +30,7 @@
       "Arm64Relocator",
       "Arm64Writer",
       "CModule",
+      "DebugSymbol",
       "File",
       "Instruction",
       "Int64",
