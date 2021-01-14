@@ -78,10 +78,12 @@ class Runtime {
     }
 
     const { vm } = this;
-    vm.perform(() => {
-      const env = vm.getEnv();
+    vm.perform(env => {
       ClassFactory._disposeAll(env);
       Env.dispose(env);
+    });
+    Script.nextTick(() => {
+      VM.dispose(vm);
     });
   }
 
