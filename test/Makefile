@@ -9,7 +9,7 @@ deploy_prefix := /data/local/tmp
 deploy_data_dir := $(deploy_prefix)/frida-java-bridge-tests
 deploy_cache_dir := $(deploy_data_dir)/dalvik-cache
 
-frida_version := 14.1.3
+frida_version := 14.2.3
 
 test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
