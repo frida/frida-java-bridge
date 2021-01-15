@@ -7,7 +7,7 @@
   "scripts": {
     "prepare": "npm run build",
     "build": "frida-compile bundle -o build/frida-java-bridge.js -c",
-    "watch": "frida-compile bundle -o build/frida-java-bridge.js -c -w"
+    "watch": "frida-compile bundle -o build/frida-java-bridge.js -w"
   },
   "license": "LGPL-2.0 WITH WxWindows-exception-3.1",
   "dependencies": {
