@@ -10,6 +10,8 @@ import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.lang.UnsupportedOperationException;
+import java.lang.ClassCastException;
+import java.lang.reflect.Array;
 import javax.crypto.Cipher;
 
 public class MethodTest {
@@ -519,6 +521,21 @@ public class MethodTest {
         assertEquals("randomString", script.getNextMessage());
     }
 
+    @Test
+    public void genericArrayTypeShouldBePreserved() {
+        loadScript("var GenericArray = Java.use('re.frida.GenericArray');" +
+                "var getArray2 = GenericArray.getArray2;" +
+                "getArray2.implementation = function (clazz) {" +
+                    "return getArray2.call(this, clazz);" +
+                "};");
+
+        try {
+            String[] arr = GenericArray.getArray2(String.class);
+        } catch (ClassCastException e) {
+            fail(e.toString());
+        }
+    }
+
     private Script script = null;
 
     private void loadScript(String code) {
@@ -711,5 +728,10 @@ class Reflector {
 class GenericArray {
     public static Class<?>[] getArray() {
         return new Class<?>[] { Collider.class, Reflector.class };
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T[] getArray2(Class<T> clazz) {
+        return (T[]) Array.newInstance(clazz, 1);
     }
 }
