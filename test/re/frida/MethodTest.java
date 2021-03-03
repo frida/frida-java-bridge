@@ -9,8 +9,8 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
-import java.lang.UnsupportedOperationException;
 import java.lang.ClassCastException;
+import java.lang.UnsupportedOperationException;
 import java.lang.reflect.Array;
 import javax.crypto.Cipher;
 
@@ -523,8 +523,8 @@ public class MethodTest {
 
     @Test
     public void genericArrayTypeShouldBePreserved() {
-        loadScript("var GenericArray = Java.use('re.frida.GenericArray');" +
-                "var getArray2 = GenericArray.getArray2;" +
+        loadScript("const GenericArray = Java.use('re.frida.GenericArray');" +
+                "const getArray2 = GenericArray.getArray2;" +
                 "getArray2.implementation = function (clazz) {" +
                     "return getArray2.call(this, clazz);" +
                 "};");
