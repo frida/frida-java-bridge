@@ -503,9 +503,9 @@ class Runtime {
     return deoptimizeBootImage(vm, vm.getEnv());
   }
 
-  deoptimizeMethod (className, methodName, description) {
+  deoptimizeMethod (method) {
     const { vm } = this;
-    return deoptimizeMethod(vm, vm.getEnv(), className, methodName, description);
+    return deoptimizeMethod(vm, vm.getEnv(), method);
   }
 
   _checkAvailable () {
