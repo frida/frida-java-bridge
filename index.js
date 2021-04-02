@@ -465,6 +465,18 @@ class Runtime {
     this.classFactory.choose(specifier, callbacks);
   }
 
+  chooseSync (specifier) {
+    const instances = [];
+    this.choose(specifier, {
+      onMatch (c) {
+        instances.push(c);
+      },
+      onComplete () {
+      }
+    });
+    return instances;
+  }
+
   retain (obj) {
     return this.classFactory.retain(obj);
   }
