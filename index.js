@@ -6,7 +6,8 @@ const {
   makeArtClassVisitor,
   makeArtClassLoaderVisitor,
   deoptimizeEverything,
-  deoptimizeBootImage
+  deoptimizeBootImage,
+  deoptimizeMethod
 } = require('./lib/android');
 const ClassFactory = require('./lib/class-factory');
 const ClassModel = require('./lib/class-model');
@@ -500,6 +501,11 @@ class Runtime {
   deoptimizeBootImage () {
     const { vm } = this;
     return deoptimizeBootImage(vm, vm.getEnv());
+  }
+
+  deoptimizeMethod (method) {
+    const { vm } = this;
+    return deoptimizeMethod(vm, vm.getEnv(), method);
   }
 
   _checkAvailable () {
