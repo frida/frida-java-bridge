@@ -576,6 +576,6 @@ function initFactoryFromLoadedApk (factory, apk) {
 }
 
 const runtime = new Runtime();
-WeakRef.bind(runtime, () => { runtime._dispose(); });
+Script.bindWeak(runtime, () => { runtime._dispose(); });
 
 module.exports = runtime;

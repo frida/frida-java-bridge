@@ -48,7 +48,6 @@
       "ThumbWriter",
       "UnixInputStream",
       "UnixOutputStream",
-      "WeakRef",
       "X86Relocator",
       "X86Writer",
       "ptr",
