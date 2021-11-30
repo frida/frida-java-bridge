@@ -1,6 +1,6 @@
 {
   "name": "frida-java-bridge",
-  "version": "5.2.1",
+  "version": "5.2.2",
   "description": "Java runtime interop from Frida",
   "main": "index.js",
   "files": [
