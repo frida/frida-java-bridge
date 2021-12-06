@@ -5,6 +5,7 @@ const {
   withRunnableArtThread,
   makeArtClassVisitor,
   makeArtClassLoaderVisitor,
+  backtrace,
   deoptimizeEverything,
   deoptimizeBootImage,
   deoptimizeMethod
@@ -476,6 +477,10 @@ class Runtime {
 
   array (type, elements) {
     return this.classFactory.array(type, elements);
+  }
+
+  backtrace (options) {
+    return backtrace(this.vm, options);
   }
 
   // Reference: http://stackoverflow.com/questions/2848575/how-to-detect-ui-thread-on-android
