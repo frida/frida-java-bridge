@@ -426,6 +426,15 @@ public class MethodTest {
     }
 
     @Test
+    public void dollarPrefixedNamesShouldBeHandled() {
+        loadScript("const DN = Java.use('re.frida.DollarNames');" +
+                "send(DN._$h.value);" +
+                "send(DN._$());");
+        assertEquals("1337", script.getNextMessage());
+        assertEquals("42", script.getNextMessage());
+    }
+
+    @Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
                 "send('' + Cipher.ENCRYPT_MODE.value);");
@@ -717,6 +726,14 @@ class Collider {
 
     public static int particle2() {
         return 4;
+    }
+}
+
+class DollarNames {
+    public static int $h = 1337;
+
+    public static int $() {
+        return 42;
     }
 }
 
