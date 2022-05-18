@@ -27,7 +27,7 @@ deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java-bridge.js
 	adb push $^ build/$(ANDROID_ABI)/libartpalette.so $(deploy_data_dir)
 
 run:
-	adb shell "LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner $(RUNNER_ARGS)"
+	adb shell "LD_PRELOAD=$(ANDROID_VM) LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner $(RUNNER_ARGS)"
 
 watch:
 	npm run watch &
