@@ -36,6 +36,7 @@
       "Instruction",
       "Int64",
       "Interceptor",
+      "MatchPattern",
       "Memory",
       "Module",
       "NULL",
