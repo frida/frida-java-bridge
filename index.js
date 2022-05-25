@@ -233,7 +233,7 @@ class Runtime {
 
     const visitClassLoaders = api['art::ClassLinker::VisitClassLoaders'];
     if (visitClassLoaders === undefined) {
-      throw new Error('This API is only available on Nougat and above');
+      throw new Error('This API is only available on Android >= 7.0');
     }
 
     const ClassLoader = factory.use('java.lang.ClassLoader');
