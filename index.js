@@ -440,7 +440,7 @@ class Runtime {
         handleBindApplication.apply(this, arguments);
       };
 
-      const getPackageInfoNoCheck = ActivityThread.getPackageInfoNoCheck;
+      const getPackageInfoNoCheck = ActivityThread.getPackageInfoNoCheck.overload('android.content.pm.ApplicationInfo', 'android.content.res.CompatibilityInfo');
       getPackageInfoNoCheck.implementation = function (appInfo) {
         const apk = getPackageInfoNoCheck.apply(this, arguments);
 
