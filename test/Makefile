@@ -74,7 +74,13 @@ build/obj/local/$(ANDROID_ABI)/libfrida-gumjs.a:
 	curl -Ls https://github.com/frida/frida/releases/download/$(frida_version)/frida-gumjs-devkit-$(frida_version)-android-$(ANDROID_ARCH).tar.xz | tar -xJf - -C $(@D)
 
 build/tests.dex: build/tests.jar
-	dx --dex --output=$@ $<
+	d8 \
+		--output build/tests.zip \
+		--classpath $(android_jar) \
+		--min-api $(ANDROID_API_LEVEL) \
+		$<
+	cd build && unzip tests.zip classes.dex
+	mv build/classes.dex $@
 
 build/tests.jar: $(test_sources) build/junit.jar build/hamcrest.jar
 	@rm -rf build/java/
