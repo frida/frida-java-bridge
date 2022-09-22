@@ -440,9 +440,13 @@ class Runtime {
         handleBindApplication.apply(this, arguments);
       };
 
-      const getPackageInfoNoCheck = ActivityThread.getPackageInfoNoCheck;
-      getPackageInfoNoCheck.implementation = function (appInfo) {
-        const apk = getPackageInfoNoCheck.apply(this, arguments);
+      const getPackageInfoCandidates = ActivityThread.getPackageInfo.overloads
+        .map(m => [m.argumentTypes.length, m])
+        .sort(([arityA,], [arityB,]) => arityB - arityA)
+        .map(([_, method]) => method);
+      const getPackageInfo = getPackageInfoCandidates[0];
+      getPackageInfo.implementation = function (...args) {
+        const apk = getPackageInfo.call(this, ...args);
 
         if (!initialized && hookpoint === 'early') {
           initialized = true;
