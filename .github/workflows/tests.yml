@@ -1,0 +1,44 @@
+name: tests
+on: [push, pull_request]
+jobs:
+  tests:
+    runs-on: macos-12
+    strategy:
+      matrix:
+        api: [26, 27, 28, 29, 30, 31]
+        arch: [x86, x86_64]
+    steps:
+      # can update to a newer version through https://developer.android.com/studio#downloads
+      - run: curl https://dl.google.com/android/repository/commandlinetools-mac-8512546_latest.zip -o /tmp/sdk.zip
+      - run: unzip -d /tmp/sdk /tmp/sdk.zip
+      - run: mkdir -p ~/Library/Android/Sdk/tools
+      - run: cp -r /tmp/sdk/cmdline-tools/* ~/Library/Android/Sdk/tools
+
+      - run: "echo y | ~/Library/Android/Sdk/tools/bin/sdkmanager tools --sdk_root=~/Library/Android/Sdk"
+      - run: "~/Library/Android/Sdk/tools/bin/sdkmanager platform-tools --sdk_root=~/Library/Android/Sdk"
+      - run: "~/Library/Android/Sdk/tools/bin/sdkmanager 'ndk;25.1.8937393' --sdk_root=~/Library/Android/Sdk"
+      - run: "~/Library/Android/Sdk/tools/bin/sdkmanager 'build-tools;33.0.0' --sdk_root=~/Library/Android/Sdk"
+
+      - uses: actions/checkout@v3
+      - run: |
+          echo "#!/bin/sh" >> /tmp/android_env
+          echo "export PATH=$PATH:/Users/runner/Library/Android/Sdk/build-tools/33.0.0" >> /tmp/android_env
+          echo "export ANDROID_SDK_ROOT=/Users/runner/Library/Android/Sdk" >> /tmp/android_env
+          echo "export ANDROID_API_LEVEL=${{ matrix.api }}" >> /tmp/android_env
+          case ${{ matrix.arch }} in
+            arm64-v8a)
+              echo "export ANDROID_ARCH=arm64" >> /tmp/android_env
+              echo "export ANDROID_ABI=arm64-v8a" >> /tmp/android_env
+              ;;
+            *)
+              echo "export ANDROID_ARCH=${{ matrix.arch }}" >> /tmp/android_env
+              echo "export ANDROID_ABI=${{ matrix.arch }}" >> /tmp/android_env
+              ;;
+          esac
+          chmod +x /tmp/android_env
+      - name: run tests in emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: ${{ matrix.arch }}
+          script: source /tmp/android_env && make check
