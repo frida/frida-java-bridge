@@ -46,7 +46,7 @@ static void on_load_ready (GObject * source_object, GAsyncResult * result, gpoin
 static void re_frida_script_destroy (JNIEnv * env, jobject self, jlong handle);
 static gboolean destroy_script_on_js_thread (gpointer user_data);
 static void on_unload_ready (GObject * source_object, GAsyncResult * result, gpointer user_data);
-static void re_frida_script_on_message (GumScript * script, const gchar * message, GBytes * data, gpointer user_data);
+static void re_frida_script_on_message (const gchar * message, GBytes * data, gpointer user_data);
 
 static void re_frida_badger_native_method (JNIEnv * env, jobject self, jstring str);
 
@@ -371,7 +371,7 @@ create_script_on_js_thread (gpointer user_data)
 {
   CreateScriptOperation * op = user_data;
 
-  gum_script_backend_create (js_backend, "test", op->source_code, NULL, on_create_ready, op);
+  gum_script_backend_create (js_backend, "test", op->source_code, NULL, NULL, on_create_ready, op);
 
   return FALSE;
 }
@@ -463,7 +463,7 @@ on_unload_ready (GObject * source_object, GAsyncResult * result, gpointer user_d
 }
 
 static void
-re_frida_script_on_message (GumScript * script, const gchar * message, GBytes * data, gpointer user_data)
+re_frida_script_on_message (const gchar * message, GBytes * data, gpointer user_data)
 {
   JNIEnv * env;
   jweak weak_wrapper = user_data;
