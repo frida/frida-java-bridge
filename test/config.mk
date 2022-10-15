@@ -8,3 +8,4 @@ ANDROID_LIBDIR ?= /system/lib64
 ANDROID_VM ?= libart.so
 APEX_LIBDIRS ?= /apex/com.android.runtime/$(shell basename $(ANDROID_LIBDIR)):/apex/com.android.art/$(shell basename $(ANDROID_LIBDIR))
 DEBUG_PORT ?= 5042
+ADB_FLAGS ?= 
