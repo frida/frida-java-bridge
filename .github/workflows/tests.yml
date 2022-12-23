@@ -7,6 +7,11 @@ jobs:
       matrix:
         api: [26, 27, 28, 29, 30, 31]
         arch: [x86, x86_64]
+        exclude:
+          - api: 30
+            arch: x86
+          - api: 31
+            arch: x86
     env:
       ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL: 200 # Default is 20
     steps:
