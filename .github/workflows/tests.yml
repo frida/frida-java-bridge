@@ -7,6 +7,8 @@ jobs:
       matrix:
         api: [26, 27, 28, 29, 30, 31]
         arch: [x86, x86_64]
+    env:
+      ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL: 200 # Default is 20
     steps:
       # can update to a newer version through https://developer.android.com/studio#downloads
       - run: curl https://dl.google.com/android/repository/commandlinetools-mac-8512546_latest.zip -o /tmp/sdk.zip
