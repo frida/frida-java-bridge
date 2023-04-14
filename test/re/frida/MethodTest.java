@@ -506,6 +506,14 @@ public class MethodTest {
         assertEquals("Hello", script.getNextMessage());
     }
 
+    // Issue #271
+    @Test
+    public void toStringOnOverloadedToString() {
+        loadScript("const utf16 = Java.use('android.icu.text.UTF16');" +
+                "send(utf16.toString());");
+        assertEquals("<class: android.icu.text.UTF16>", script.getNextMessage());
+    }
+
     @Test
     public void replacementCanAcceptModifiedUTF8StringParameter() {
         loadScript("var Badger = Java.use('re.frida.Badger');" +
