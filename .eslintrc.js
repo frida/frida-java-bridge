@@ -5,6 +5,7 @@ module.exports = {
   globals: {
     "Arm64Relocator": "readonly",
     "Arm64Writer": "readonly",
+    "Checksum": "readonly",
     "CModule": "readonly",
     "DebugSymbol": "readonly",
     "File": "readonly",
