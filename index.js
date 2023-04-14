@@ -1,5 +1,5 @@
-const getApi = require('./lib/api');
-const {
+import getApi from './lib/api.js';
+import {
   getAndroidVersion,
   withAllArtThreadsSuspended,
   withRunnableArtThread,
@@ -9,13 +9,13 @@ const {
   deoptimizeEverything,
   deoptimizeBootImage,
   deoptimizeMethod
-} = require('./lib/android');
-const ClassFactory = require('./lib/class-factory');
-const ClassModel = require('./lib/class-model');
-const Env = require('./lib/env');
-const Types = require('./lib/types');
-const VM = require('./lib/vm');
-const { checkJniResult } = require('./lib/result');
+} from './lib/android.js';
+import ClassFactory from './lib/class-factory.js';
+import ClassModel from './lib/class-model.js';
+import Env from './lib/env.js';
+import { initialize } from './lib/types.js';
+import VM from './lib/vm.js';
+import { checkJniResult } from './lib/result.js';
 
 const jsizeSize = 4;
 const pointerSize = Process.pointerSize;
@@ -78,7 +78,7 @@ class Runtime {
     const vm = new VM(api);
     this.vm = vm;
 
-    Types.initialize(vm);
+    initialize(vm);
     ClassFactory._initialize(vm, api);
     this.classFactory = new ClassFactory();
 
@@ -594,4 +594,4 @@ function initFactoryFromLoadedApk (factory, apk) {
 const runtime = new Runtime();
 Script.bindWeak(runtime, () => { runtime._dispose(); });
 
-module.exports = runtime;
+export default runtime;
