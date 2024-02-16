@@ -21,9 +21,6 @@
     "lint": "eslint lib",
     "fix": "eslint --fix lib"
   },
-  "dependencies": {
-    "jssha": "^3.1.2"
-  },
   "devDependencies": {
     "eslint": "^8.33.0",
     "eslint-config-semistandard": "^17.0.0",

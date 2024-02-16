@@ -1,1 +1,3 @@
-global.LocalJava = require('../');
+import LocalJava from '../index.js';
+
+global.LocalJava = LocalJava;
