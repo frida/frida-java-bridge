@@ -12,6 +12,6 @@
   "license": "LGPL-2.0 WITH WxWindows-exception-3.1",
   "dependencies": {
     "chokidar-cli": "^3.0.0",
-    "frida-compile": "^10.2.5"
+    "frida-compile": "^16.2.2"
   }
 }
