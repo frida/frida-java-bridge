@@ -67,6 +67,28 @@ public class MethodTest {
     }
 
     @Test
+    public void primitive2DArrayCanBePassed() {
+        loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
+                "var buffinator = Buffinator.$new();" +
+                "send(buffinator.sum2d([[1, 2, 3], [4, 5, 6], [7, 8, 9]]));");
+        assertEquals("45", script.getNextMessage());
+    }
+
+    @Test
+    public void methodWith2DArrayCanBeHooked() {
+        loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
+                "var sum2d = Buffinator.sum2d;" +
+                "sum2d.implementation = function (arrs) {" +
+                    "send(JSON.stringify(arrs));" +
+                    "return sum2d.call(this, arrs);" +
+                "};");
+        Buffinator buffinator = new Buffinator();
+        byte[][] arrs = {{1, 2, 3}, {4, 5, 6}, {7, 8, 9}};
+        assertEquals(45, buffinator.sum2d(arrs));
+        assertEquals("[[1,2,3],[4,5,6],[7,8,9]]", script.getNextMessage());
+    }
+
+    @Test
     public void primitiveArrayCanBeModified() {
         loadScript("var Buffinator = Java.use('re.frida.Buffinator');" +
                 "var buffinator = Buffinator.$new();" +
@@ -616,6 +638,16 @@ class Buffinator {
         int result = 0;
         for (byte value : values) {
             result += value;
+        }
+        return result;
+    }
+
+    public int sum2d(byte[][] values) {
+        int result = 0;
+        for (byte[] array : values) {
+            for (byte value : array) {
+                result += value;
+            }
         }
         return result;
     }
