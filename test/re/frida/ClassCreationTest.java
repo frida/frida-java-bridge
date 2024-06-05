@@ -321,6 +321,7 @@ public class ClassCreationTest {
                 "  fields: {" +
                 "    lastInt: 'int'," +
                 "    lastStr: 'java.lang.String'," +
+                "    lastByteArr: '[B'," +
                 "  }," +
                 "  methods: {" +
                 "    format: [{" +
