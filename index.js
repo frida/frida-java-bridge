@@ -16,6 +16,7 @@ const Env = require('./lib/env');
 const Types = require('./lib/types');
 const VM = require('./lib/vm');
 const { checkJniResult } = require('./lib/result');
+const Deobfuscator = require('./lib/deobfuscator');
 
 const jsizeSize = 4;
 const pointerSize = Process.pointerSize;
@@ -565,6 +566,10 @@ class Runtime {
     }
 
     return result;
+  }
+
+  deobfuscator(mapping) {
+    return new Deobfuscator(mapping);
   }
 }
 
