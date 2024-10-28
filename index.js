@@ -214,28 +214,19 @@ class Runtime {
     const { vm, api } = this;
     const env = vm.getEnv();
 
-    const classHandles = [];
     const addGlobalReference = api['art::JavaVMExt::AddGlobalRef'];
     const { vm: vmHandle } = api;
     withRunnableArtThread(vm, env, thread => {
       const collectClassHandles = makeArtClassVisitor(klass => {
-        classHandles.push(addGlobalReference(vmHandle, thread, klass));
+        const handle = addGlobalReference(vmHandle, thread, klass);
+        const className = env.getClassName(handle);
+        callbacks.onMatch(className, handle);
+        env.deleteGlobalRef(handle);
         return true;
       });
 
       api['art::ClassLinker::VisitClasses'](api.artClassLinker.address, collectClassHandles);
     });
-
-    try {
-      classHandles.forEach(handle => {
-        const className = env.getClassName(handle);
-        callbacks.onMatch(className, handle);
-      });
-    } finally {
-      classHandles.forEach(handle => {
-        env.deleteGlobalRef(handle);
-      });
-    }
 
     callbacks.onComplete();
   }
