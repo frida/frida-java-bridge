@@ -219,9 +219,14 @@ class Runtime {
     withRunnableArtThread(vm, env, thread => {
       const collectClassHandles = makeArtClassVisitor(klass => {
         const handle = addGlobalReference(vmHandle, thread, klass);
-        const className = env.getClassName(handle);
-        callbacks.onMatch(className, handle);
-        env.deleteGlobalRef(handle);
+        try {
+          const className = env.getClassName(handle);
+          callbacks.onMatch(className, handle);
+          env.deleteGlobalRef(handle);
+          }
+        finally {
+          env.deleteGlobalRef(handle);
+        }
         return true;
       });
 
