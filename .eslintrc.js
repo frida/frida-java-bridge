@@ -28,6 +28,7 @@ module.exports = {
     "X86Relocator": "readonly",
     "X86Writer": "readonly",
     "ptr": "readonly",
+    "int64": "readonly",
     "uint64": "readonly",
   },
 };
