@@ -222,8 +222,7 @@ class Runtime {
         try {
           const className = env.getClassName(handle);
           callbacks.onMatch(className, handle);
-          }
-        finally {
+        } finally {
           env.deleteGlobalRef(handle);
         }
         return true;
