@@ -1,15 +1,8 @@
-import pluginJs from "@eslint/js";
+import neostandard from 'neostandard'
 
-
-/** @type {import('eslint').Linter.Config[]} */
-export default [
-  pluginJs.configs.recommended,
-  {
-    rules:{
-      'no-unused-vars': 'off',
-    },
-    languageOptions: {
-      globals: {
+export default neostandard({
+    semi: true,
+    globals: {
         "Arm64Relocator": "readonly",
         "Arm64Writer": "readonly",
         "Checksum": "readonly",
@@ -38,7 +31,5 @@ export default [
         "ptr": "readonly",
         "int64": "readonly",
         "uint64": "readonly",
-      },
-    }
-  }
-];
+    },
+})
