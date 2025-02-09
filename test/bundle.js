@@ -1,3 +1,3 @@
-import LocalJava from '../index.js';
+import LocalJava from 'frida-java-bridge';
 
 global.LocalJava = LocalJava;
