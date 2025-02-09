@@ -2,6 +2,7 @@
   "name": "frida-java-bridge",
   "version": "6.3.7",
   "description": "Java runtime interop from Frida",
+  "type": "module",
   "main": "index.js",
   "files": [
     "/index.js",
@@ -21,15 +22,11 @@
     "lint": "eslint lib",
     "fix": "eslint --fix lib"
   },
-  "dependencies": {
-    "jssha": "^3.1.2"
-  },
   "devDependencies": {
-    "eslint": "^8.33.0",
-    "eslint-config-semistandard": "^17.0.0",
-    "eslint-config-standard": "^17.0.0",
-    "eslint-plugin-import": "^2.27.5",
-    "eslint-plugin-n": "^15.6.1",
-    "eslint-plugin-promise": "^6.1.1"
+    "@types/frida-gum": "^18.7.2",
+    "frida-compile": "^16.4.1",
+    "@eslint/js": "^9.20.0",
+    "eslint": "^9.20.0",
+    "neostandard": "^0.12.1"
   }
 }
