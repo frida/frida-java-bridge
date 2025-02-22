@@ -3,15 +3,19 @@
   "version": "1.0.0",
   "description": "Bundled up version of frida-java-bridge for testing",
   "private": true,
+  "type": "module",
   "main": "bundle.js",
   "scripts": {
     "prepare": "npm run build",
-    "build": "frida-compile bundle -o build/frida-java-bridge.js -c",
-    "watch": "frida-compile bundle -o build/frida-java-bridge.js -w"
+    "build": "frida-compile bundle.js -o build/frida-java-bridge.js -c",
+    "watch": "frida-compile bundle.js -o build/frida-java-bridge.js -w"
   },
   "license": "LGPL-2.0 WITH WxWindows-exception-3.1",
   "dependencies": {
+    "frida-java-bridge": "file:../"
+  },
+  "devDependencies": {
     "chokidar-cli": "^3.0.0",
-    "frida-compile": "^10.2.5"
+    "frida-compile": "^16.4.1"
   }
 }
