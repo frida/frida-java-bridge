@@ -334,7 +334,7 @@ class Runtime {
       }
 
       if (this._pollListener === null) {
-        this._pollListener = Interceptor.attach(Module.getExportByName('libc.so', 'epoll_wait'), this._makePollHook());
+        this._pollListener = Interceptor.attach(Process.getModuleByName('libc.so').getExportByName('epoll_wait'), this._makePollHook());
         Interceptor.flush();
       }
 
@@ -539,7 +539,7 @@ class Runtime {
         return result;
       }
 
-      const readlink = new NativeFunction(Module.getExportByName(null, 'readlink'), 'pointer', ['pointer', 'pointer', 'pointer'], {
+      const readlink = new NativeFunction(Module.getGlobalExportByName('readlink'), 'pointer', ['pointer', 'pointer', 'pointer'], {
         exceptions: 'propagate'
       });
 
