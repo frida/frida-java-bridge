@@ -2,6 +2,10 @@
   "name": "frida-java-bridge",
   "version": "7.0.1",
   "description": "Java runtime interop from Frida",
+  "keywords": [
+    "frida-gum",
+    "frida-gum-bridge"
+  ],
   "type": "module",
   "main": "index.js",
   "files": [
