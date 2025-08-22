@@ -415,11 +415,25 @@ declare module "frida-java-bridge" {
                 [name: string]: any;
             };
 
-        interface MethodDispatcher<Holder extends Members<Holder> = {}> extends Method<Holder> {
+        type IsEmptyArray<T extends any[]> = T extends [] ? true : false;
+
+        type Overload<Identifiers extends Array<string> = [], Types extends Array<any> = [], Return = any> = [Identifiers, Types, Return];
+
+        type OverloadsMethods<
+            Holder extends Members<Holder> = {},
+            OLs extends ReadonlyArray<Overload<any, any, any>> = []
+        > = {
+                [K in keyof OLs]:
+                OLs[K] extends Overload<any, infer A extends any[], infer R>
+                ? Method<Holder, A, R>
+                : never
+            };
+
+        interface MethodDispatcher<Holder extends Members<Holder> = {}, Overloads extends Array<Overload<Array<any>, Array<any>, any>> = []> extends Method<Holder> {
             /**
              * Available overloads.
              */
-            overloads: Array<Method<Holder>>;
+            overloads: IsEmptyArray<Overloads> extends true ? Array<Method<Holder>> : OverloadsMethods<Holder, Overloads>;
 
             /**
              * Obtains a specific overload.
@@ -430,8 +444,8 @@ declare module "frida-java-bridge" {
             overload(...args: string[]): Method<Holder>;
         }
 
-        interface Method<Holder extends Members<Holder> = {}> {
-            (...params: any[]): any;
+        interface Method<Holder extends Members<Holder> = {}, Params extends any[] = any[], Return = any> {
+            (...params: Params): Return;
 
             /**
              * Name of this method.
@@ -458,7 +472,7 @@ declare module "frida-java-bridge" {
              * replace the original implementation. Assign `null` at a future point
              * to revert back to the original implementation.
              */
-            implementation: MethodImplementation<Holder> | null;
+            implementation: MethodImplementation<Holder, Params, Return> | null;
 
             /**
              * Method return type.
@@ -481,10 +495,10 @@ declare module "frida-java-bridge" {
              * Useful for e.g. setting `traps: "all"` to perform execution tracing
              * in conjunction with Stalker.
              */
-            clone: (options: NativeFunctionOptions) => Method<Holder>;
+            clone: (options: NativeFunctionOptions) => Method<Holder, Params, Return>;
         }
 
-        type MethodImplementation<This extends Members<This> = {}> = (this: Wrapper<This>, ...params: any[]) => any;
+        type MethodImplementation<This extends Members<This> = {}, Params extends any[] = any[], Return = any> = (this: Wrapper<This>, ...params: Params) => Return;
 
         interface Field<Value = any, Holder extends Members<Holder> = {}> {
             /**
