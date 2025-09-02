@@ -592,6 +592,13 @@ function initFactoryFromLoadedApk (factory, apk) {
 }
 
 const runtime = new Runtime();
-Script.bindWeak(runtime, () => { runtime._dispose(); });
+
+Script.bindWeak(runtime, () => { 
+  if (Process.arch === 'arm64') {
+    Script.setImmediate(() => runtime._dispose());
+    return;
+  }
+  runtime._dispose();
+});
 
 export default runtime;
