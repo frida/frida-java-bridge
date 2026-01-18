@@ -1,6 +1,6 @@
 {
   "name": "frida-java-bridge",
-  "version": "7.0.10",
+  "version": "7.0.11",
   "description": "Java runtime interop from Frida",
   "keywords": [
     "frida-gum",
