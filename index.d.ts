@@ -192,6 +192,12 @@ declare module "frida-java-bridge" {
          */
         function deoptimizeBootImage(): void;
 
+        /**
+         * Deoptimizes a method / constructor in case hooked callee is not called
+         * because of inline.
+         */
+        function deoptimizeMethod(method: Method): void;
+
         const vm: VM;
 
         /**
