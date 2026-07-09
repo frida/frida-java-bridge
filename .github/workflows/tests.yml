@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         api: [26, 27, 28, 29, 30, 31]
-        arch: [x86, x86_64]
+        arch: [x86_64]
         exclude:
           - api: 30
             arch: x86
