@@ -582,12 +582,12 @@ public class MethodTest {
     }
 
     private void loadScript(String code, String performMethodName) {
-        Script script = new Script(TestRunner.fridaJavaBundle +
-                ";\n(function (Java) {" +
+        Script script = new Script(TestRunner.buildScript(
+                "(function (Java) {" +
                 "Java." + performMethodName + "(function () {" +
                 code +
                 "});" +
-                "})(LocalJava);");
+                "})(LocalJava);"));
         this.script = script;
     }
 

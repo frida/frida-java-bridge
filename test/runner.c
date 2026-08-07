@@ -2,11 +2,14 @@
 #include <fcntl.h>
 #include <frida-gumjs.h>
 #include <jni.h>
+#include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/system_properties.h>
 
 typedef struct _CreateScriptOperation CreateScriptOperation;
 typedef struct _DestroyScriptOperation DestroyScriptOperation;
+typedef struct _SigchainAction SigchainAction;
 
 struct _CreateScriptOperation
 {
@@ -29,6 +32,14 @@ struct _DestroyScriptOperation
 
   GMutex lock;
   GCond cond;
+};
+
+/* Must match art::SigchainAction, as ART hands us these by pointer. */
+struct _SigchainAction
+{
+  bool (* sc_sigaction) (int, siginfo_t *, void *);
+  sigset_t sc_mask;
+  guint64 sc_flags;
 };
 
 static void frida_java_init_vm (JavaVM ** vm, JNIEnv ** env, gboolean enable_optimizations);
@@ -54,6 +65,8 @@ static void destroy_weak_ref (jweak ref);
 
 static guint get_system_api_level (void);
 
+static void on_special_signal (int signo, siginfo_t * info, void * context);
+
 static const JNINativeMethod re_frida_test_runner_methods[] =
 {
   { "registerClassLoader", "(Ljava/lang/ClassLoader;)V", re_frida_test_runner_register_class_loader },
@@ -77,6 +90,9 @@ static GMainContext * js_context;
 static jobject re_frida_test_runner_class_loader;
 
 static jmethodID re_frida_script_on_message_method;
+
+static SigchainAction special_handler[NSIG];
+static struct sigaction previous_action[NSIG];
 
 int
 main (int argc, char * argv[])
@@ -544,14 +560,70 @@ SetSpecialSignalHandlerFn (int signal, gpointer fn)
   /* g_print ("SetSpecialSignalHandlerFn(signal=%d)\n", signal); */
 }
 
+/*
+ * These two are the only part of the chain ART actually uses, and unlike the rest
+ * they cannot be stubbed out: our definitions shadow the real libsigchain that
+ * libart.so pulls in, so a handler we drop is a handler ART never installs.
+ *
+ * That was survivable while the only casualty was the SIGSEGV handler behind
+ * implicit null checks, which the tests never trip. It stopped being survivable
+ * with the userfaultfd-based GC that became the default in API level 35: ART
+ * registers the heap with UFFD_FEATURE_SIGBUS and depends on servicing the
+ * resulting SIGBUS itself, so losing that handler kills the process on the first
+ * compaction, wherever the mutator happens to be.
+ *
+ * The handler goes in through plain sigaction(), which Gum's exceptor intercepts
+ * and chains to, exactly as it would for any other process hosting a VM.
+ */
+
 void
-AddSpecialSignalHandlerFn (int signal, gpointer sa)
+AddSpecialSignalHandlerFn (int signal, SigchainAction * sa)
 {
-  /* g_print ("AddSpecialSignalHandlerFn(signal=%d)\n", signal); */
+  struct sigaction action;
+
+  if (signal <= 0 || signal >= NSIG || special_handler[signal].sc_sigaction != NULL)
+    return;
+
+  special_handler[signal] = *sa;
+
+  memset (&action, 0, sizeof (action));
+  action.sa_sigaction = on_special_signal;
+  action.sa_flags = SA_SIGINFO | SA_ONSTACK;
+  /*
+   * The kernel installs this mask around the handler and takes it away again on return,
+   * which is what libsigchain otherwise does by hand. It also blocks the signal being
+   * delivered, so a handler that faults on its own account cannot arrive back here
+   * forever: the kernel forces the default action instead, which is the tombstone we
+   * want rather than a hang.
+   */
+  action.sa_mask = sa->sc_mask;
+
+  sigaction (signal, &action, &previous_action[signal]);
 }
 
 void
 RemoveSpecialSignalHandlerFn (int signal, bool (* fn) (int, siginfo_t *, void *))
 {
-  /* g_print ("RemoveSpecialSignalHandlerFn(signal=%d)\n", signal); */
+  if (signal <= 0 || signal >= NSIG || special_handler[signal].sc_sigaction != fn)
+    return;
+
+  special_handler[signal].sc_sigaction = NULL;
+
+  sigaction (signal, &previous_action[signal], NULL);
+}
+
+static void
+on_special_signal (int signo, siginfo_t * info, void * context)
+{
+  bool (* handler) (int, siginfo_t *, void *) = special_handler[signo].sc_sigaction;
+
+  if (handler != NULL && handler (signo, info, context))
+    return;
+
+  /*
+   * Nobody claimed it. Put back whatever was installed before us and return, so
+   * that the faulting instruction runs again and crashes for real, leaving the
+   * tombstone we would otherwise have swallowed.
+   */
+  sigaction (signo, &previous_action[signo], NULL);
 }

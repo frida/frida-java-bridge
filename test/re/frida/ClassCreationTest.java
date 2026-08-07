@@ -409,8 +409,8 @@ public class ClassCreationTest {
     private Script script = null;
 
     private void loadScript(String code) {
-        Script script = new Script(TestRunner.fridaJavaBundle +
-                ";\n(function (Java) {" +
+        Script script = new Script(TestRunner.buildScript(
+                "(function (Java) {" +
                 "Java.perform(function () {" +
                 "Java.classFactory.cacheDir = '" +
                         TestRunner.getCacheDir() + "';" +
@@ -421,7 +421,7 @@ public class ClassCreationTest {
                     "').readPointer(), Java.use('java.lang.ClassLoader'));" +
                 code +
                 "});" +
-                "})(LocalJava);");
+                "})(LocalJava);"));
         this.script = script;
     }
 
