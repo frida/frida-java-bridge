@@ -26,7 +26,8 @@ public class TestRunner {
         JUnitCore.main(
             "re.frida.ClassRegistryTest",
             "re.frida.MethodTest",
-            "re.frida.ClassCreationTest"
+            "re.frida.ClassCreationTest",
+            "re.frida.ClassInitializerTest"
         );
     }
 
