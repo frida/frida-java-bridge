@@ -1,6 +1,7 @@
 import getApi from './lib/api.js';
 import {
   getAndroidVersion,
+  hasActiveReplacementFrames,
   withAllArtThreadsSuspended,
   withRunnableArtThread,
   makeArtClassVisitor,
@@ -93,13 +94,35 @@ class Runtime {
     }
 
     const { vm } = this;
-    vm.perform(env => {
-      ClassFactory._disposeAll(env);
-      Env.dispose(env);
-    });
-    Script.nextTick(() => {
-      VM.dispose(vm);
-    });
+    const dispose = () => {
+      vm.perform(env => {
+        ClassFactory._disposeAll(env);
+        Env.dispose(env);
+      });
+      Script.nextTick(() => {
+        VM.dispose(vm);
+      });
+    };
+    if (this.api.flavor !== 'art') {
+      dispose();
+      return;
+    }
+    // Keep callbacks and cloned ArtMethods alive until their JNI frames return.
+    Script.pin();
+    let retired;
+    vm.perform(() => { retired = ClassFactory._revertAll(); });
+    const drain = () => {
+      let active;
+      vm.perform(env => { active = hasActiveReplacementFrames(retired, env); });
+      if (active) {
+        setTimeout(drain, 1);
+        return;
+      }
+      dispose();
+      retired = [];
+      Script.unpin();
+    };
+    setImmediate(drain);
   }
 
   get available () {
