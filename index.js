@@ -450,6 +450,26 @@ class Runtime {
 
         return apk;
       };
+
+      // An attach can land after the app made both calls hooked above, but
+      // before its Application exists. Then neither hook ever fires, so this
+      // also checks for the Application every 50 ms, until it exists or a hook
+      // fires.
+      const lookForApplication = () => {
+        if (initialized) return;
+        runtime.vm.perform(() => {
+          const app = ActivityThread.currentApplication();
+          if (initialized) return;
+          if (app === null) {
+            setTimeout(lookForApplication, 50);
+            return;
+          }
+          initialized = true;
+          initFactoryFromApplication(factory, app);
+          runtime._performPendingVmOps();
+        });
+      };
+      setTimeout(lookForApplication, 50);
     });
   }
 
