@@ -16,13 +16,13 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/frida/frida-java-bridge.git"
+    "url": "git+https://github.com/frida-packages/frida-java-bridge.git"
   },
   "license": "LGPL-2.0 WITH WxWindows-exception-3.1",
   "bugs": {
-    "url": "https://github.com/frida/frida-java-bridge/issues"
+    "url": "https://github.com/frida-packages/frida-java-bridge/issues"
   },
-  "homepage": "https://github.com/frida/frida-java-bridge#readme",
+  "homepage": "https://github.com/frida-packages/frida-java-bridge#readme",
   "scripts": {
     "lint": "eslint lib",
     "fix": "eslint --fix lib"
