@@ -110,11 +110,9 @@ class Runtime {
     // Keep callbacks and cloned ArtMethods alive until their JNI frames return.
     Script.pin();
     vm.beginHandleDrain();
-    let retired;
-    vm.perform(() => { retired = ClassFactory._revertAll(); });
+    let retired = vm.perform(() => ClassFactory._revertAll());
     const drain = () => {
-      let active;
-      vm.perform(env => { active = hasActiveReplacementFrames(retired, env); });
+      const active = vm.perform(env => hasActiveReplacementFrames(retired, env));
       if (active || retired.some(replacement => replacement._c.size !== 0)) {
         setTimeout(drain, 1);
         return;
