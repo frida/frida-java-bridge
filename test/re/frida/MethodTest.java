@@ -457,6 +457,13 @@ public class MethodTest {
     }
 
     @Test
+    public void useShouldInitializeClass() {
+        loadScript("var Lazy = Java.use('re.frida.LazilyInitialized');" +
+                "send('' + Lazy.answer.value);");
+        assertEquals("42", script.getNextMessage());
+    }
+
+    @Test
     public void staticFieldCanBeRead() {
         loadScript("var Cipher = Java.use('javax.crypto.Cipher');" +
                 "send('' + Cipher.ENCRYPT_MODE.value);");
@@ -775,6 +782,10 @@ class DollarNames {
     public static int $() {
         return 42;
     }
+}
+
+class LazilyInitialized {
+    public static int answer = 42;
 }
 
 class Reflector {
