@@ -35,7 +35,12 @@ public class Script implements Closeable {
 
     public String getNextMessage() {
         try {
-            return pending.poll(5, TimeUnit.SECONDS);
+            String message = pending.poll(5, TimeUnit.SECONDS);
+            if (message == null) {
+                throw new IllegalStateException("timed out waiting for a message from the"
+                        + " script; see stderr and logcat for errors raised by it");
+            }
+            return message;
         } catch (InterruptedException e) {
             return getNextMessage();
         }
@@ -51,7 +56,8 @@ public class Script implements Closeable {
             } else if (type.equals("log")) {
                 System.out.println(message.getString("payload"));
             } else if (type.equals("error")) {
-                System.err.println(message.getString("stack"));
+                // Not every error carries a stack, and getString() would throw right past it.
+                System.err.println(message.optString("stack", rawMessage));
             } else {
                 System.err.println(rawMessage);
             }

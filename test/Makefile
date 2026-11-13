@@ -9,7 +9,7 @@ deploy_prefix := /data/local/tmp
 deploy_data_dir := $(deploy_prefix)/frida-java-bridge-tests
 deploy_cache_dir := $(deploy_data_dir)/dalvik-cache
 
-frida_version := 16.0.1
+frida_version := 17.17.0
 
 test_sources := $(wildcard re/frida/*.java)
 test_classes := $(patsubst %.java,%.class,$(test_sources))
@@ -27,7 +27,10 @@ deploy: build/$(ANDROID_ABI)/runner build/tests.dex build/frida-java-bridge.js
 	adb push $^ build/$(ANDROID_ABI)/libartpalette.so $(deploy_data_dir)
 
 run:
-	adb shell "LD_PRELOAD=$(ANDROID_VM) LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner $(RUNNER_ARGS)"
+	@adb logcat -G 16M >/dev/null 2>&1 || true
+	@adb logcat -c >/dev/null 2>&1 || true
+	adb shell "LD_PRELOAD=$(ANDROID_VM) LD_LIBRARY_PATH='$(APEX_LIBDIRS):$(deploy_data_dir)' $(deploy_data_dir)/runner $(RUNNER_ARGS)" \
+		|| { status=$$?; adb logcat -d -b all; exit $$status; }
 
 watch:
 	npm run watch &
@@ -101,7 +104,7 @@ build/tests.jar: $(test_sources) build/junit.jar build/hamcrest.jar
 
 build/junit.jar:
 	@mkdir -p $(@D)
-	curl -Ls https://github.com/junit-team/junit4/releases/download/r4.12/junit-4.12.jar > $@
+	curl -Ls https://repo1.maven.org/maven2/junit/junit/4.13.2/junit-4.13.2.jar > $@
 
 build/hamcrest.jar:
 	@mkdir -p $(@D)
