@@ -6,7 +6,7 @@ jobs:
     strategy:
       matrix:
         api: [26, 27, 28, 29, 30, 31]
-        arch: [x86, x86_64]
+        arch: [x86_64]
         exclude:
           - api: 30
             arch: x86
@@ -29,7 +29,7 @@ jobs:
           path: |
             ~/.android/avd/*
             ~/.android/adb*
-          key: avd-${{ matrix.api }}-${{ matrix.arch }}
+          key: avd-${{ matrix.arch }}-${{ matrix.api }}
       - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
